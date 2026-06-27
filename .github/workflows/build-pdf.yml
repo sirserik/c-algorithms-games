@@ -1,0 +1,72 @@
+name: Build PDF
+
+# Автосборка учебника: проверяет, что весь код компилируется, и собирает
+# оба PDF (полную книгу и мини-PDF задач). Готовые PDF кладутся в артефакты,
+# а при пуше тега vX.Y.Z — прикрепляются к релизу.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Установить зависимости (pandoc, xelatex, шрифты, компилятор)
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            texlive-xetex \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            fonts-paratype \
+            fonts-dejavu \
+            build-essential
+          sudo fc-cache -f
+
+      - name: Проверить компиляцию всех примеров (-Wall -Wextra)
+        run: bash build/check-code.sh
+
+      - name: Подготовить метаданные со свободными шрифтами
+        # На Ubuntu нет Helvetica Neue/Menlo (шрифты macOS) — подменяем на
+        # PT Sans и DejaVu Sans Mono, которые установлены выше.
+        run: |
+          sed -e 's/Helvetica Neue/PT Sans/g' \
+              -e 's/Menlo/DejaVu Sans Mono/g' \
+              build/metadata.yaml > build/metadata-ci.yaml
+          sed -e 's/Helvetica Neue/PT Sans/g' \
+              -e 's/Menlo/DejaVu Sans Mono/g' \
+              build/metadata-tasks.yaml > build/metadata-tasks-ci.yaml
+
+      - name: Собрать полный учебник
+        run: META=build/metadata-ci.yaml bash build/build-pdf.sh
+
+      - name: Собрать мини-PDF задач
+        run: META=build/metadata-tasks-ci.yaml bash build/build-tasks-pdf.sh
+
+      - name: Загрузить PDF в артефакты
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: |
+            Algoritmy-i-igry-na-Si.pdf
+            Zadachi-s-sobesedovaniy-po-Si.pdf
+          if-no-files-found: error
+
+      - name: Прикрепить PDF к релизу (только для тегов vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Algoritmy-i-igry-na-Si.pdf
+            Zadachi-s-sobesedovaniy-po-Si.pdf

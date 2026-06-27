@@ -5,6 +5,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Файл метаданных можно переопределить через переменную META.
+META="${META:-$ROOT/build/metadata-tasks.yaml}"
 OUT="${1:-$ROOT/Zadachi-s-sobesedovaniy-po-Si.pdf}"
 
 FILES=(
@@ -21,7 +23,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 pandoc \
   -s \
-  "$ROOT/build/metadata-tasks.yaml" \
+  "$META" \
   "${FILES[@]}" \
   --pdf-engine=xelatex \
   --top-level-division=chapter \

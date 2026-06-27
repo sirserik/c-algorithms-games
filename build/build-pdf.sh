@@ -5,6 +5,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Файл метаданных можно переопределить через переменную META
+# (CI подставляет вариант со свободными шрифтами).
+META="${META:-$ROOT/build/metadata.yaml}"
 OUT="${1:-$ROOT/Algoritmy-i-igry-na-Si.pdf}"
 shift || true
 
@@ -56,7 +59,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 pandoc \
   -s \
-  "$ROOT/build/metadata.yaml" \
+  "$META" \
   "${EXISTING[@]}" \
   --pdf-engine=xelatex \
   --top-level-division=chapter \
