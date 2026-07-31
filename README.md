@@ -22,6 +22,8 @@
 
 - `docs/tutorial/*.md` — главы учебника.
 - `code/*.c` — итоговые программы каждой главы (компилируемые).
+- `tests/run-tests.sh` — регрессионные тесты: запускают программы и
+  сверяют вывод с эталонами из `tests/expected/`.
 - `build/build-pdf.sh` — сборка PDF (pandoc + xelatex).
 - `build/check-code.sh` — компиляция всех примеров с `-Wall -Wextra`.
 - `build/STYLE_GUIDE.md` — правила написания глав.
@@ -29,9 +31,14 @@
 ## Сборка
 
 ```bash
-./build/build-pdf.sh          # → Algoritmy-i-igry-na-Si.pdf (вся книга)
-./build/build-tasks-pdf.sh    # → Zadachi-s-sobesedovaniy-po-Si.pdf (только задачи)
-./build/check-code.sh         # проверить, что весь код собирается
+make            # проверить код, прогнать тесты и собрать оба PDF
+make check      # только компиляция всех примеров с -Wall -Wextra
+make test       # только регрессионные тесты (вывод против эталонов)
+make pdf        # → Algoritmy-i-igry-na-Si.pdf (вся книга)
+make tasks      # → Zadachi-s-sobesedovaniy-po-Si.pdf (только задачи)
 ```
+
+Эталоны тестов перезаписываются командой `./tests/run-tests.sh --update`
+— делай это осознанно, когда вывод программы поменялся намеренно.
 
 Требуется: `clang`/`gcc`, `pandoc`, `xelatex` (MacTeX/TeX Live).

@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <time.h>
 #include <termios.h>
 #include <unistd.h>
@@ -24,7 +25,8 @@
 static int snake_x[MAX_LEN];   /* координаты сегментов: [0] — голова */
 static int snake_y[MAX_LEN];
 static int snake_len;          /* сколько сегментов сейчас */
-static int dir_x, dir_y;       /* направление движения головы */
+static int dir_x, dir_y;       /* куда голова поедет в следующем кадре */
+static int moved_x, moved_y;   /* куда она реально поехала в прошлом кадре */
 static int food_x, food_y;     /* где лежит еда */
 static int score;              /* счёт */
 static int game_over;          /* 0 — играем, 1 — конец */
@@ -36,6 +38,15 @@ static struct termios orig_termios;   /* сюда сохраним исходн�
 static void disable_raw_mode(void)
 {
     tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+}
+
+/* Ctrl+C во время игры: чиним терминал и только потом умираем.
+   Сам по себе сигнал убивает процесс мимо atexit, поэтому перехватываем. */
+static void on_sigint(int sig)
+{
+    (void)sig;
+    disable_raw_mode();
+    _exit(130);          /* 128 + номер SIGINT — так принято в шеллах */
 }
 
 /* Включить «сырой» неблокирующий ввод: без ожидания Enter и без эха. */
@@ -119,11 +130,14 @@ static void draw(void)
     printf("Счёт: %d   (WASD — движение, q — выход)\n", score);
 }
 
-/* Сменить направление, не разрешая разворот на 180 градусов. */
+/* Сменить направление, не разрешая разворот на 180 градусов.
+   Сравниваем с тем, куда змейка ПОЕХАЛА в прошлом кадре (moved_x/moved_y),
+   а не с уже накопленным dir_x/dir_y: иначе два нажатия за один кадр
+   (вверх, потом влево, пока ползём вправо) сложились бы в разворот. */
 static void set_dir(int nx, int ny)
 {
-    if (nx == -dir_x && ny == -dir_y) {
-        return;   /* противоположное текущему — игнорируем */
+    if (nx == -moved_x && ny == -moved_y) {
+        return;   /* противоположное реальному движению — игнорируем */
     }
     dir_x = nx;
     dir_y = ny;
@@ -132,6 +146,10 @@ static void set_dir(int nx, int ny)
 /* Один шаг змейки: сдвиг тела, новая голова, столкновения, еда. */
 static void update(void)
 {
+    /* фиксируем направление этого кадра — на него будет смотреть set_dir */
+    moved_x = dir_x;
+    moved_y = dir_y;
+
     /* запомним хвост — он пригодится, если змейка вырастет */
     int tail_x = snake_x[snake_len - 1];
     int tail_y = snake_y[snake_len - 1];
@@ -178,6 +196,8 @@ int main(void)
     srand((unsigned)time(NULL));   /* разный «случай» при каждом запуске */
 
     enable_raw_mode();             /* переключаем терминал в игровой режим */
+    atexit(disable_raw_mode);      /* вернуть режим при любом обычном выходе */
+    signal(SIGINT, on_sigint);     /* ...и при Ctrl+C тоже */
 
     /* начальная змейка из 3 сегментов в центре, ползёт вправо */
     snake_len = 3;
@@ -188,10 +208,13 @@ int main(void)
     snake_x[2] = cx - 2; snake_y[2] = cy;
     dir_x = 1;
     dir_y = 0;
+    moved_x = dir_x;
+    moved_y = dir_y;
     score = 0;
     game_over = 0;
 
     place_food();
+    draw();                        /* показываем стартовое поле сразу */
 
     while (!game_over) {
         /* считываем все накопившиеся нажатия */

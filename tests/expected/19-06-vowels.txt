@@ -1,0 +1,1 @@
+В строке "Programming In C" гласных: 4

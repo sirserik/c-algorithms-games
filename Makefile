@@ -8,10 +8,10 @@ TASKS  := Zadachi-s-sobesedovaniy-po-Si.pdf
 CHAPTERS := $(wildcard docs/tutorial/*.md)
 SOURCES  := $(wildcard code/*.c)
 
-.PHONY: all pdf book tasks check clean help
+.PHONY: all pdf book tasks check test clean help
 
-## all   — собрать обе книги (полную + задачи) и проверить код
-all: check pdf tasks
+## all   — собрать обе книги (полную + задачи), проверить код и тесты
+all: check test pdf tasks
 
 ## pdf / book — собрать полный учебник
 pdf book: $(BOOK)
@@ -32,6 +32,10 @@ $(TASKS): docs/tutorial/18a-interview-guide.md \
 ## check — скомпилировать все примеры code/*.c с -Wall -Wextra (без warning)
 check:
 	./build/check-code.sh
+
+## test  — прогнать примеры и сверить вывод с эталонами tests/expected
+test:
+	./tests/run-tests.sh
 
 ## clean — удалить собранные PDF
 clean:

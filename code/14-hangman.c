@@ -66,7 +66,9 @@ int main(void)
 
         char c;
         if (scanf(" %c", &c) != 1) {
-            break;   /* ввод кончился (EOF) */
+            /* ввод кончился (Ctrl+D) — это не проигрыш, а выход */
+            printf("\nИгра прервана. Слово было: %s\n", secret);
+            return 0;
         }
 
         if (c >= 'A' && c <= 'Z') {

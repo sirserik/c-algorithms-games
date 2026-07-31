@@ -59,13 +59,18 @@ void reveal(int r, int c)
     }
 }
 
-/* Расставить MINES мин по случайным клеткам без повторов. */
-void place_mines(void)
+/* Расставить MINES мин по случайным клеткам без повторов.
+   Клетку (safe_r, safe_c) — первый ход игрока — не минируем,
+   иначе можно проиграть на первом же ходу, ничего не зная о поле. */
+void place_mines(int safe_r, int safe_c)
 {
     int placed = 0;
     while (placed < MINES) {
         int r = rand() % H;
         int c = rand() % W;
+        if (r == safe_r && c == safe_c) {
+            continue;                /* сюда игрок сейчас ткнёт */
+        }
         if (mines[r][c] == 0) {      /* клетка ещё свободна */
             mines[r][c] = 1;
             placed++;
@@ -119,12 +124,12 @@ int count_opened(void)
 int main(void)
 {
     srand((unsigned int)time(NULL));
-    place_mines();
 
+    int mines_placed = 0;            /* мины ставим только после первого хода */
     int safe_cells = H * W - MINES;  /* столько клеток без мин */
 
     printf("Сапёр %dx%d, мин: %d\n", H, W, MINES);
-    printf("Вводи координаты: строка и столбец (1..%d).\n", H);
+    printf("Вводи координаты: строка 1..%d и столбец 1..%d.\n", H, W);
 
     while (1) {
         print_board(0);
@@ -154,13 +159,20 @@ int main(void)
         col--;
 
         if (row < 0 || row >= H || col < 0 || col >= W) {
-            printf("Координаты вне поля. Введи от 1 до %d.\n", H);
+            printf("Координаты вне поля: строка 1..%d, столбец 1..%d.\n",
+                   H, W);
             continue;
         }
         if (opened[row][col] == 1) {
             printf("Эта клетка уже открыта.\n");
             continue;
         }
+
+        if (!mines_placed) {         /* самый первый ход задаёт поле */
+            place_mines(row, col);
+            mines_placed = 1;
+        }
+
         if (mines[row][col] == 1) {
             print_board(1);          /* показываем все мины */
             printf("Бабах! Ты открыл мину. Игра окончена.\n");

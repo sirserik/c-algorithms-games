@@ -37,6 +37,9 @@ jobs:
       - name: Проверить компиляцию всех примеров (-Wall -Wextra)
         run: bash build/check-code.sh
 
+      - name: Прогнать регрессионные тесты (вывод программ против эталонов)
+        run: bash tests/run-tests.sh
+
       - name: Подготовить метаданные со свободными шрифтами
         # На Ubuntu нет Helvetica Neue/Menlo (шрифты macOS) — подменяем на
         # PT Sans и DejaVu Sans Mono, которые установлены выше.

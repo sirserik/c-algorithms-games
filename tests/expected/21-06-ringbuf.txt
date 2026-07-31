@@ -1,0 +1,12 @@
+push 1: ok
+push 2: ok
+push 3: ok
+push 4: ok
+push 5: полон
+push 6: полон
+pop 1
+pop 2
+pop 3
+pop 4
+pop 7
+pop 8

@@ -1,0 +1,12 @@
+enqueue 1 (в очереди 1)
+enqueue 2 (в очереди 2)
+enqueue 3 (в очереди 3)
+enqueue 4 (в очереди 4)
+enqueue 5 (в очереди 5)
+enqueue 6: очередь полна
+dequeue 1 (осталось 4)
+dequeue 2 (осталось 3)
+dequeue 3 (осталось 2)
+dequeue 4 (осталось 1)
+dequeue 5 (осталось 0)
+dequeue: очередь пуста
