@@ -64,7 +64,6 @@ pandoc \
   --pdf-engine=xelatex \
   --top-level-division=chapter \
   --highlight-style=tango \
-  --listings=false \
   -o "$TMP/book.tex"
 
 cd "$TMP"
