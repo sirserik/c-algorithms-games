@@ -1,3 +1,12 @@
+/* Глава 10. Своя длина строки и переворот строки на месте.
+ *
+ *   cc -std=c11 -Wall -Wextra -O2 10-reverse.c -o 10-reverse
+ *   ./10-reverse
+ *
+ * Только латиница: в UTF-8 русская буква занимает два байта, и
+ * посимвольный переворот её разрежет пополам.
+ */
+
 #include <stdio.h>
 
 /* Своя длина строки: считаем символы до '\0'. */
@@ -10,6 +19,15 @@ int my_strlen(const char *s)
     return len;
 }
 
+/* Срезает хвостовой '\n', который оставляет после себя fgets. */
+void chomp(char *s)
+{
+    int len = my_strlen(s);
+    if (len > 0 && s[len - 1] == '\n') {
+        s[len - 1] = '\0';
+    }
+}
+
 int main(void)
 {
     char line[100];
@@ -18,13 +36,9 @@ int main(void)
     if (fgets(line, sizeof line, stdin) == NULL) {
         return 0;                       /* ввода не было */
     }
+    chomp(line);
 
-    /* Убираем хвостовой '\n', который оставил fgets. */
     int len = my_strlen(line);
-    if (len > 0 && line[len - 1] == '\n') {
-        line[len - 1] = '\0';
-        len--;
-    }
 
     /* Переворот на месте: меняем местами края, идём к центру. */
     int i = 0;

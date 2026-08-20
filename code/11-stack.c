@@ -1,39 +1,81 @@
-#include <stdio.h>
-#include <stdlib.h>
+/* Глава 11. Стек (LIFO) на массиве фиксированного размера.
+ *
+ *   cc -std=c11 -Wall -Wextra -O2 11-stack.c -o 11-stack
+ *   ./11-stack
+ *
+ * push/pop/peek возвращают 1 при успехе и 0 при отказе (стек полон или
+ * пуст). Само значение выдаётся через указатель out — так отказ не
+ * путается ни с каким «специальным» числом.
+ */
 
-#define CAPACITY 5      // сколько тарелок влезает в стопку
+#include <stdio.h>
+
+#define CAPACITY 5      /* сколько тарелок влезает в стопку */
+
+struct Stack {
+    int data[CAPACITY];
+    int top;            /* индекс первой СВОБОДНОЙ ячейки = размер */
+};
+
+/* Кладём на вершину. 1 — положили, 0 — стек полон. */
+int push(struct Stack *s, int value)
+{
+    if (s->top == CAPACITY) {
+        return 0;
+    }
+    s->data[s->top] = value;
+    s->top++;
+    return 1;
+}
+
+/* Снимаем с вершины в *out. 1 — сняли, 0 — стек пуст. */
+int pop(struct Stack *s, int *out)
+{
+    if (s->top == 0) {
+        return 0;
+    }
+    s->top--;
+    *out = s->data[s->top];
+    return 1;
+}
+
+/* Подсматриваем вершину, не снимая. 1 — есть что смотреть, 0 — пусто. */
+int peek(const struct Stack *s, int *out)
+{
+    if (s->top == 0) {
+        return 0;
+    }
+    *out = s->data[s->top - 1];
+    return 1;
+}
 
 int main(void)
 {
-    int data[CAPACITY];     // сам стек
-    int top = 0;            // индекс первой СВОБОДНОЙ ячейки = размер
+    struct Stack s;
+    s.top = 0;                  /* пустой стек */
 
-    // push: кладём тарелку наверх
+    /* Кладём шесть значений в стопку на пять — последнее не влезет. */
     for (int value = 10; value <= 60; value += 10) {
-        if (top == CAPACITY) {                  // стопка полна
-            printf("push %d: переполнение, не кладу\n", value);
-            continue;
+        if (push(&s, value)) {
+            printf("push %d (в стеке %d)\n", value, s.top);
+        } else {
+            printf("push %d: стек полон, не кладу\n", value);
         }
-        data[top] = value;                      // положили на вершину
-        top = top + 1;                          // вершина поднялась
-        printf("push %d (в стеке %d)\n", value, top);
     }
 
-    // peek: смотрим на верхнюю тарелку, не снимая
-    if (top > 0) {
-        printf("peek: наверху %d\n", data[top - 1]);
+    int x;
+    if (peek(&s, &x)) {
+        printf("peek: наверху %d (в стеке всё те же %d)\n", x, s.top);
     }
 
-    // pop: снимаем тарелки сверху, пока не опустеет
-    while (top > 0) {
-        top = top - 1;                          // вершина опустилась
-        int value = data[top];                  // взяли верхнюю
-        printf("pop %d (осталось %d)\n", value, top);
+    /* Снимаем, пока pop возвращает 1. */
+    while (pop(&s, &x)) {
+        printf("pop %d (осталось %d)\n", x, s.top);
     }
 
-    // пытаемся снять из пустого
-    if (top == 0) {
-        printf("pop: стек пуст, снимать нечего\n");
+    /* Ещё один pop на пустом стеке: не падаем, а честно отказываем. */
+    if (pop(&s, &x) == 0) {
+        printf("pop на пустом стеке: вернул 0, x не тронут (там %d)\n", x);
     }
 
     return 0;

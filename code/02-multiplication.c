@@ -8,8 +8,12 @@ int is_even(int x)
 int main(void)
 {
     int n;
+
     printf("Таблица умножения для какого числа? ");
-    scanf("%d", &n);
+    if (scanf("%d", &n) != 1) {
+        printf("Это не число.\n");
+        return 1;
+    }
 
     for (int i = 1; i <= 10; i++) {
         int result = n * i;
@@ -19,5 +23,6 @@ int main(void)
             printf("%2d x %2d = %3d\n", n, i, result);
         }
     }
+
     return 0;
 }

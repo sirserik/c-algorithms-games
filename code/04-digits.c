@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h>
 
 int main(void)
 {
@@ -9,28 +10,30 @@ int main(void)
         return 1;
     }
 
-    if (n < 0) {
-        n = -n;   /* работаем с модулем, знак отбросим */
+    /* Работаем не с самим n, а с копией в long long. Две причины:
+       1) -n для INT_MIN не влезает в int, а в long long влезает;
+       2) перевёрнутое число бывает больше исходного и int переполняет. */
+    long long m = n;
+    if (m < 0) {
+        m = -m;   /* берём модуль: знак цифрам не нужен */
     }
 
-    int sum = 0;        /* сюда копим сумму цифр */
-    int reversed = 0;   /* сюда собираем перевёрнутое число */
-    int original = n;   /* запомним исходное для печати */
+    int sum = 0;             /* сюда копим сумму цифр */
+    long long reversed = 0;  /* сюда собираем перевёрнутое число */
 
-    if (n == 0) {
-        sum = 0;
-        reversed = 0;
+    while (m > 0) {
+        int digit = (int)(m % 10);         /* последняя цифра */
+        sum = sum + digit;                 /* добавили к сумме */
+        reversed = reversed * 10 + digit;  /* приклеили справа */
+        m = m / 10;                        /* отбросили цифру */
     }
 
-    while (n > 0) {
-        int digit = n % 10;          /* последняя цифра */
-        sum = sum + digit;           /* добавили к сумме */
-        reversed = reversed * 10 + digit;  /* приклеили к перевёрнутому */
-        n = n / 10;                  /* отбросили последнюю цифру */
-    }
-
-    printf("Число:           %d\n", original);
+    printf("Число:           %d\n", n);
     printf("Сумма цифр:      %d\n", sum);
-    printf("Задом наперёд:   %d\n", reversed);
+    printf("Задом наперёд:   %lld", reversed);
+    if (reversed > INT_MAX) {
+        printf("  (в int уже не влезает!)");
+    }
+    printf("\n");
     return 0;
 }

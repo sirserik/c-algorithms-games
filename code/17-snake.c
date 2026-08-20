@@ -7,7 +7,10 @@
  * Программа интерактивная: запускать в обычном терминале, не в пайпе.
  */
 
-#define _DEFAULT_SOURCE   /* открыть доступ к usleep, read, termios в C11 */
+/* На Linux (glibc) со строгим -std=c11 объявление usleep спрятано за
+   этим макросом. На macOS он ничего не меняет — но пусть стоит, чтобы
+   файл собирался одинаково на обеих системах. Ставить ДО #include. */
+#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,36 +33,68 @@ static int moved_x, moved_y;   /* куда она реально поехала 
 static int food_x, food_y;     /* где лежит еда */
 static int score;              /* счёт */
 static int game_over;          /* 0 — играем, 1 — конец */
+static int game_won;           /* 1 — змейка заняла всё поле */
 
 /* ---- Сырой режим терминала ---- */
 static struct termios orig_termios;   /* сюда сохраним исходные настройки */
+static int raw_saved;                 /* 1 — orig_termios заполнен */
 
 /* Вернуть терминал в нормальный режим. */
 static void disable_raw_mode(void)
 {
-    tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+    if (raw_saved) {
+        tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+    }
 }
 
-/* Ctrl+C во время игры: чиним терминал и только потом умираем.
-   Сам по себе сигнал убивает процесс мимо atexit, поэтому перехватываем. */
-static void on_sigint(int sig)
+/* Применить игровой режим поверх сохранённых настроек. */
+static void apply_raw_mode(void)
 {
-    (void)sig;
-    disable_raw_mode();
-    _exit(130);          /* 128 + номер SIGINT — так принято в шеллах */
-}
+    struct termios raw = orig_termios;         /* копия для правки */
 
-/* Включить «сырой» неблокирующий ввод: без ожидания Enter и без эха. */
-static void enable_raw_mode(void)
-{
-    tcgetattr(STDIN_FILENO, &orig_termios);   /* запомнили как было */
-    struct termios raw = orig_termios;        /* копия для правки */
-
-    raw.c_lflag &= ~(ICANON | ECHO);          /* снять каноническ. режим и эхо */
+    raw.c_lflag &= ~(ICANON | ECHO);           /* снять канонику и эхо */
     raw.c_cc[VMIN]  = 0;                       /* read не ждёт символов */
     raw.c_cc[VTIME] = 0;                       /* и не ждёт по таймеру */
 
     tcsetattr(STDIN_FILENO, TCSANOW, &raw);    /* применить сейчас же */
+}
+
+/* Смертельный сигнал (Ctrl+C, kill, закрытие окна): чиним терминал и
+   только потом умираем. Сигнал убивает процесс мимо atexit — поэтому
+   и перехватываем. */
+static void on_fatal_signal(int sig)
+{
+    disable_raw_mode();
+    _exit(128 + sig);    /* 128 + номер сигнала — так принято в шеллах */
+}
+
+/* Ctrl+Z: отдать терминал шеллу в нормальном виде и честно уснуть. */
+static void on_sigtstp(int sig)
+{
+    (void)sig;
+    disable_raw_mode();
+    signal(SIGTSTP, SIG_DFL);   /* вернуть штатное поведение... */
+    raise(SIGTSTP);             /* ...и остановиться по-настоящему */
+}
+
+/* Нас разбудили командой fg — снова забираем терминал под игру. */
+static void on_sigcont(int sig)
+{
+    (void)sig;
+    signal(SIGTSTP, on_sigtstp);   /* заново повесить наш обработчик */
+    apply_raw_mode();
+}
+
+/* Включить «сырой» неблокирующий ввод: без ожидания Enter и без эха.
+   Возвращает 1 при успехе, 0 — если ввод не терминал (пайп, файл). */
+static int enable_raw_mode(void)
+{
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
+        return 0;                              /* это не терминал */
+    }
+    raw_saved = 1;                             /* запомнили как было */
+    apply_raw_mode();
+    return 1;
 }
 
 /* Прочитать одну клавишу. Если её нет — вернуть -1 (не ждём ввода). */
@@ -73,9 +108,14 @@ static int read_key(void)
     return -1;
 }
 
-/* Положить еду в случайную свободную клетку. */
-static void place_food(void)
+/* Положить еду в случайную свободную клетку.
+   Возвращает 0, если свободных клеток не осталось: змейка заняла всё
+   поле. Без этой проверки цикл ниже крутился бы вечно. */
+static int place_food(void)
 {
+    if (snake_len >= WIDTH * HEIGHT) {
+        return 0;                 /* свободных клеток нет */
+    }
     int ok = 0;
     while (!ok) {
         food_x = rand() % WIDTH;
@@ -88,6 +128,7 @@ static void place_food(void)
             }
         }
     }
+    return 1;
 }
 
 /* Нарисовать поле, змейку, еду и счёт. */
@@ -150,6 +191,26 @@ static void update(void)
     moved_x = dir_x;
     moved_y = dir_y;
 
+    /* куда голова СОБИРАЕТСЯ шагнуть */
+    int nx = snake_x[0] + dir_x;
+    int ny = snake_y[0] + dir_y;
+
+    /* столкновение со стеной — проверяем ДО шага, чтобы на последнем
+       кадре змейка осталась нарисованной целиком, а не без головы */
+    if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT) {
+        game_over = 1;
+        return;
+    }
+
+    /* столкновение с собственным телом. Хвост (последний сегмент) в этом
+       кадре уползёт, поэтому его не считаем — вот почему i < snake_len-1. */
+    for (int i = 1; i < snake_len - 1; i++) {
+        if (snake_x[i] == nx && snake_y[i] == ny) {
+            game_over = 1;
+            return;
+        }
+    }
+
     /* запомним хвост — он пригодится, если змейка вырастет */
     int tail_x = snake_x[snake_len - 1];
     int tail_y = snake_y[snake_len - 1];
@@ -161,33 +222,21 @@ static void update(void)
     }
 
     /* голова делает шаг в текущем направлении */
-    snake_x[0] += dir_x;
-    snake_y[0] += dir_y;
-
-    /* столкновение со стеной */
-    if (snake_x[0] < 0 || snake_x[0] >= WIDTH ||
-        snake_y[0] < 0 || snake_y[0] >= HEIGHT) {
-        game_over = 1;
-        return;
-    }
-
-    /* столкновение с собственным телом (со 2-го сегмента) */
-    for (int i = 1; i < snake_len; i++) {
-        if (snake_x[i] == snake_x[0] && snake_y[i] == snake_y[0]) {
-            game_over = 1;
-            return;
-        }
-    }
+    snake_x[0] = nx;
+    snake_y[0] = ny;
 
     /* съели еду? */
-    if (snake_x[0] == food_x && snake_y[0] == food_y) {
+    if (nx == food_x && ny == food_y) {
         if (snake_len < MAX_LEN) {
             snake_x[snake_len] = tail_x;   /* отрастили хвост обратно */
             snake_y[snake_len] = tail_y;
             snake_len++;
         }
         score += 10;
-        place_food();
+        if (!place_food()) {
+            game_won = 1;                  /* поле заполнено целиком */
+            game_over = 1;
+        }
     }
 }
 
@@ -195,9 +244,18 @@ int main(void)
 {
     srand((unsigned)time(NULL));   /* разный «случай» при каждом запуске */
 
-    enable_raw_mode();             /* переключаем терминал в игровой режим */
-    atexit(disable_raw_mode);      /* вернуть режим при любом обычном выходе */
-    signal(SIGINT, on_sigint);     /* ...и при Ctrl+C тоже */
+    if (!enable_raw_mode()) {      /* переключаем терминал в игровой режим */
+        fprintf(stderr, "Змейке нужен настоящий терминал: "
+                        "запусти ./snake без пайпа и без < файла.\n");
+        return 1;
+    }
+    atexit(disable_raw_mode);      /* вернуть режим при обычном выходе */
+    signal(SIGINT,  on_fatal_signal);   /* Ctrl+C   */
+    signal(SIGTERM, on_fatal_signal);   /* kill     */
+    signal(SIGQUIT, on_fatal_signal);   /* Ctrl+\   */
+    signal(SIGHUP,  on_fatal_signal);   /* окно закрыли */
+    signal(SIGTSTP, on_sigtstp);        /* Ctrl+Z   */
+    signal(SIGCONT, on_sigcont);        /* fg       */
 
     /* начальная змейка из 3 сегментов в центре, ползёт вправо */
     snake_len = 3;
@@ -212,6 +270,7 @@ int main(void)
     moved_y = dir_y;
     score = 0;
     game_over = 0;
+    game_won = 0;
 
     place_food();
     draw();                        /* показываем стартовое поле сразу */
@@ -239,6 +298,9 @@ int main(void)
 
     disable_raw_mode();        /* ОБЯЗАТЕЛЬНО вернуть терминал как было */
 
+    if (game_won) {
+        printf("\nПоле заполнено целиком — ты прошёл игру!\n");
+    }
     printf("\nИгра окончена! Итоговый счёт: %d\n", score);
     return 0;
 }

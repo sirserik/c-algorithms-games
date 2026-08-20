@@ -29,11 +29,14 @@ int main(void)
             continue;
         }
 
+        if (guess < 1 || guess > 100) {   /* мимо правил игры */
+            printf("Число должно быть от 1 до 100.\n");
+            continue;
+        }
+
         attempts++;
 
-        if (guess < 1 || guess > 100) {
-            printf("Число должно быть от 1 до 100.\n");
-        } else if (guess < secret) {
+        if (guess < secret) {
             printf("Больше.\n");
         } else if (guess > secret) {
             printf("Меньше.\n");

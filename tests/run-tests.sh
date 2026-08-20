@@ -26,14 +26,31 @@ fi
 
 # Детерминированные программы: вывод не зависит ни от времени, ни от rand.
 # Для тех, кому нужен ввод, рядом лежит tests/inputs/ИМЯ.txt.
+#
+# Сюда намеренно не попали:
+#   05-bench, 07-bench, 08-bench, 09-fib-bench, 11-growth — печатают
+#     секунды, числа плавают от машины к машине;
+#   09-depth — нарочно роняет программу переполнением стека, да ещё и
+#     собирается только с -O0 (на -O2 компилятор разворачивает
+#     рекурсию в цикл, и падения нет);
+#   02-types — печатает результат знакового переполнения, а это UB:
+#     обещать одинаковый ответ на разных компиляторах нельзя;
+#   08-cmp-trap — показывает, что делает qsort с нечестным
+#     компаратором, а её реализация в каждой libc своя;
+#   12-guess, 13-rps, 14-hangman, 16-minesweeper, 17-snake — игры,
+#     вывод зависит от rand и от времени.
 PROGRAMS=(
   01-hello
+  02-input
   02-multiplication
+  03-arrays
   03-dynamic
   03-pointers
+  03-strings
   04-digits
   04-factorial
   04-fizzbuzz
+  04-overflow
   05-gcd
   05-prime
   05-sieve
@@ -41,11 +58,13 @@ PROGRAMS=(
   06-minmax
   06-reverse
   07-binary
+  07-binary-edge
   07-linear
   08-bubble
   08-insertion
   08-qsort
   08-selection
+  08-stable
   09-factorial
   09-fib
   09-hanoi
@@ -57,7 +76,9 @@ PROGRAMS=(
   11-list
   11-queue
   11-stack
+  13-rps-check
   15-tic-tac-toe
+  18-files
   19-01-swap
   19-02-reverse-string
   19-03-palindrome

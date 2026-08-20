@@ -22,7 +22,7 @@ int my_atoi(const char *s, int *out)
         return 0;
     }
 
-    long result = 0;                     /* копим в long: он шире int */
+    long long result = 0;                /* копим в long long: он шире int */
     while (*s >= '0' && *s <= '9') {
         result = result * 10 + (*s - '0');
         if (sign == 1 && result > INT_MAX) {       /* вышли за +предел */
@@ -46,8 +46,8 @@ void my_itoa(int n, char *buf)
     int i = 0;
     int neg = 0;
 
-    /* Берём значение в long, потому что -INT_MIN в int не влезает. */
-    long value = n;
+    /* Берём значение в long long: -INT_MIN в int не влезает. */
+    long long value = n;
     if (value < 0) {
         neg = 1;
         value = -value;

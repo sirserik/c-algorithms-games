@@ -140,6 +140,9 @@ void lru_free(LRU *c)
     c->head = NULL;
     c->tail = NULL;
     c->size = 0;
+    for (int i = 0; i < NBUCKETS; i++) {   /* корзины тоже обнуляем: */
+        c->buckets[i] = NULL;              /* иначе останутся висячие */
+    }                                      /* указатели на free-нутые узлы */
 }
 
 int main(void)

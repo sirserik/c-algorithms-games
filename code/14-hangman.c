@@ -12,6 +12,11 @@ int draw_word(const char *word, const int *guessed)
     int revealed = 0;
     for (int i = 0; word[i] != '\0'; i++) {
         char ch = word[i];
+        if (ch < 'a' || ch > 'z') {   /* не строчная латиница: */
+            printf("%c ", ch);        /* показываем как есть,   */
+            revealed++;               /* угадывать её не нужно  */
+            continue;
+        }
         if (guessed[ch - 'a']) {
             printf("%c ", ch);
             revealed++;
@@ -47,7 +52,8 @@ int main(void)
     const char *secret = words[rand() % word_count];
     int len = (int)strlen(secret);
 
-    int guessed[26] = {0};   /* guessed[c - 'a'] == 1, если букву уже называли */
+    /* guessed[c - 'a'] == 1, если букву уже называли */
+    int guessed[26] = {0};
     int wrong = 0;
 
     printf("Игра \"Виселица\". Угадай слово по буквам!\n");

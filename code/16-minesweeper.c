@@ -125,7 +125,7 @@ int main(void)
 {
     srand((unsigned int)time(NULL));
 
-    int mines_placed = 0;            /* мины ставим только после первого хода */
+    int mines_placed = 0;            /* мины ставим после первого хода */
     int safe_cells = H * W - MINES;  /* столько клеток без мин */
 
     printf("Сапёр %dx%d, мин: %d\n", H, W, MINES);

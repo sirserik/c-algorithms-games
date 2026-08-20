@@ -79,6 +79,8 @@ header-includes: |
   \newunicodechar{≤}{{\symbolfont ≤}}
   \newunicodechar{≥}{{\symbolfont ≥}}
   \newunicodechar{·}{{\symbolfont ·}}
+  \newunicodechar{₀}{{\symbolfont ₀}}
+  \newunicodechar{₁}{{\symbolfont ₁}}
   \newunicodechar{…}{{\symbolfont …}}
   \newunicodechar{✓}{{\symbolfont ✓}}
   \newunicodechar{✗}{{\symbolfont ✗}}

@@ -7,6 +7,10 @@
  *   ./07-bench
  *
  * Абсолютные секунды зависят от машины, а вот порядок разницы — нет.
+ *
+ * Все найденные индексы складываем в sink. Без этого умный компилятор
+ * имеет право заметить, что результат поиска никому не нужен, и
+ * выбросить весь цикл — тогда мы замерим пустоту.
  */
 
 #include <stdio.h>
@@ -56,30 +60,41 @@ int main(void)
     }
 
     int queries = 10000;                   /* столько раз ищем */
-    int target = (n - 1) * 2;              /* последний элемент — худший случай */
+    int last = (n - 1) * 2;                /* последний элемент */
+    long long sink = 0;                    /* копилка результатов */
 
     clock_t t0 = clock();
-    int found_lin = -1;
     for (int q = 0; q < queries; q++) {
-        found_lin = linear_search(a, n, target);
+        sink += linear_search(a, n, last);
     }
     double lin = (double)(clock() - t0) / CLOCKS_PER_SEC;
 
     t0 = clock();
-    int found_bin = -1;
     for (int q = 0; q < queries; q++) {
-        found_bin = binary_search(a, n, target);
+        sink += binary_search(a, n, last);
     }
     double bin = (double)(clock() - t0) / CLOCKS_PER_SEC;
 
-    printf("массив: %d элементов, %d поисков последнего элемента\n",
-           n, queries);
-    printf("линейный: %.4f c\n", lin);
-    printf("бинарный: %.4f c\n", bin);
-    if (bin > 0.0) {
-        printf("разница:  в %.0f раз\n", lin / bin);
+    /* Тот же бинарный поиск, но каждый раз ищем другое число:
+       процессор не может «запомнить дорогу», и время честнее. */
+    t0 = clock();
+    for (int q = 0; q < queries; q++) {
+        sink += binary_search(a, n, (q * 7919 % n) * 2);
     }
-    printf("(оба нашли индекс %d и %d)\n", found_lin, found_bin);
+    double bin_mix = (double)(clock() - t0) / CLOCKS_PER_SEC;
+
+    printf("массив: %d элементов, по %d поисков\n", n, queries);
+    printf("линейный, всегда последний: %8.4f c  (%7.2f мкс на поиск)\n",
+           lin, lin * 1e6 / queries);
+    printf("бинарный, всегда последний: %8.4f c  (%7.2f мкс на поиск)\n",
+           bin, bin * 1e6 / queries);
+    printf("бинарный, каждый раз новый: %8.4f c  (%7.2f мкс на поиск)\n",
+           bin_mix, bin_mix * 1e6 / queries);
+    if (bin_mix > 0.0) {
+        printf("линейный медленнее бинарного примерно в %.0f раз\n",
+               lin / bin_mix);
+    }
+    printf("(контрольная сумма индексов: %lld)\n", sink);
 
     free(a);
     return 0;
