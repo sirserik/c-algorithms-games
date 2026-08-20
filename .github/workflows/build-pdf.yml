@@ -24,11 +24,18 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update
+          # --no-install-recommends отсекает то, что тянется «за компанию»,
+          # поэтому нужное перечисляем поимённо: lmodern требует шаблон
+          # pandoc, latex-recommended даёт microtype и enumitem,
+          # lang-cyrillic — переносы русских слов.
           sudo apt-get install -y --no-install-recommends \
             pandoc \
             texlive-xetex \
+            texlive-latex-recommended \
             texlive-latex-extra \
             texlive-fonts-recommended \
+            texlive-lang-cyrillic \
+            lmodern \
             fonts-paratype \
             fonts-dejavu \
             build-essential
