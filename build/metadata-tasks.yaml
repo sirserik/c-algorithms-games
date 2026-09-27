@@ -82,6 +82,17 @@ header-includes: |
   \newunicodechar{…}{{\symbolfont …}}
   \newunicodechar{₀}{{\symbolfont ₀}}
   \newunicodechar{₁}{{\symbolfont ₁}}
+  \newunicodechar{⌊}{{\symbolfont ⌊}}
+  \newunicodechar{⌋}{{\symbolfont ⌋}}
+  \newunicodechar{⌈}{{\symbolfont ⌈}}
+  \newunicodechar{⌉}{{\symbolfont ⌉}}
+  \newunicodechar{⁰}{{\symbolfont ⁰}}
+  \newunicodechar{⁴}{{\symbolfont ⁴}}
+  \newunicodechar{⁵}{{\symbolfont ⁵}}
+  \newunicodechar{⁶}{{\symbolfont ⁶}}
+  \newunicodechar{⁷}{{\symbolfont ⁷}}
+  \newunicodechar{⁸}{{\symbolfont ⁸}}
+  \newunicodechar{⁹}{{\symbolfont ⁹}}
   \newunicodechar{✓}{{\symbolfont ✓}}
   \newunicodechar{✗}{{\symbolfont ✗}}
   \newunicodechar{●}{{\symbolfont ●}}

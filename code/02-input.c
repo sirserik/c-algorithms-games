@@ -16,7 +16,8 @@ int main(void)
         printf("Это не число. Попробуй ещё раз: ");
     }
 
+    long long twice = n;    /* копия в широкую коробку */
     printf("Принято: %d\n", n);
-    printf("Удвоенное: %d\n", n * 2);
+    printf("Удвоенное: %lld\n", twice * 2);
     return 0;
 }

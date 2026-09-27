@@ -22,13 +22,16 @@ int gcd_slow(int a, int b)
         return a;
     }
 
-    int result = 1;
-    for (int d = 1; d <= a && d <= b; d++) {
+    int smaller = a;
+    if (b < smaller) {
+        smaller = b;
+    }
+    for (int d = smaller; d > 1; d--) {
         if (a % d == 0 && b % d == 0) {
-            result = d;
+            return d;
         }
     }
-    return result;
+    return 1;   /* общего делителя больше 1 не нашлось */
 }
 
 int gcd(int a, int b)

@@ -114,7 +114,9 @@ static int read_key(void)
 static int place_food(void)
 {
     if (snake_len >= WIDTH * HEIGHT) {
-        return 0;                 /* свободных клеток нет */
+        food_x = -1;              /* свободных клеток нет: убираем еду */
+        food_y = -1;              /* с поля, чтобы не закрыла голову */
+        return 0;
     }
     int ok = 0;
     while (!ok) {

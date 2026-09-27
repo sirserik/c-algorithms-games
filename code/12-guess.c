@@ -15,25 +15,31 @@ int main(void)
     while (guess != secret) {
         printf("Твой вариант: ");
 
-        int rc = scanf("%d", &guess);
+        int value;
+        int rc = scanf("%9d", &value);
         if (rc == EOF) {           /* ввод закончился (Ctrl+D) */
             printf("\nИгра прервана. Я загадывал %d.\n", secret);
             return 0;
         }
-        if (rc != 1) {             /* ввели не число */
-            printf("Это не число. Введи целое от 1 до 100.\n");
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF) {
-                /* выбрасываем мусорный ввод до конца строки */
+
+        int next = getchar();      /* что стоит сразу за числом */
+        while (next == ' ' || next == '\t') {
+            next = getchar();      /* пробелы в конце прощаем */
+        }
+        if (rc != 1 || (next != '\n' && next != EOF)) {
+            printf("Не понял. Введи одно целое число от 1 до 100.\n");
+            while (next != '\n' && next != EOF) {
+                next = getchar();  /* выбрасываем остаток строки */
             }
             continue;
         }
 
-        if (guess < 1 || guess > 100) {   /* мимо правил игры */
+        if (value < 1 || value > 100) {   /* мимо правил игры */
             printf("Число должно быть от 1 до 100.\n");
             continue;
         }
 
+        guess = value;
         attempts++;
 
         if (guess < secret) {

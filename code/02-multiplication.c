@@ -14,6 +14,10 @@ int main(void)
         printf("Это не число.\n");
         return 1;
     }
+    if (n < 1 || n > 99) {
+        printf("Нужно число от 1 до 99.\n");
+        return 1;
+    }
 
     for (int i = 1; i <= 10; i++) {
         int result = n * i;

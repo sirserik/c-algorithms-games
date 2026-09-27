@@ -45,8 +45,10 @@ int main(void)
 
     if (is_prime(n)) {
         printf("%d — простое число\n", n);
+    } else if (n < 2) {
+        printf("%d — ни простое, ни составное\n", n);
     } else {
-        printf("%d — составное (или меньше 2)\n", n);
+        printf("%d — составное число\n", n);
     }
     return 0;
 }

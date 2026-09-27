@@ -11,7 +11,7 @@ int popcount_naive(unsigned int n)
     return count;
 }
 
-/* Приём Брайана Кернигана: n &= n - 1 гасит самый младший единичный бит. */
+/* Приём Брайана Кернигана: n &= n - 1 гасит младший единичный бит. */
 int popcount_kernighan(unsigned int n)
 {
     int count = 0;

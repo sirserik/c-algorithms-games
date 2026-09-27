@@ -117,7 +117,7 @@ int main(void)
     insertion_sort(a, 40000);
     clock_t t0 = clock();
     bubble_sort(a, 40000);
-    printf("\nпузырёк по уже отсортированным 40000: %.4f c\n",
+    printf("\nпузырёк по уже отсортированным 40000: %.6f c\n",
            (double)(clock() - t0) / CLOCKS_PER_SEC);
 
     /* А теперь qsort на миллионе — в 25 раз больше, чем 40000. */

@@ -26,6 +26,10 @@ int main(void)
         printf("Нужно n >= 0.\n");
         return 1;
     }
+    if (n > 30) {
+        printf("Больше 30 не надо: это уже миллиард ходов.\n");
+        return 1;
+    }
 
     hanoi(n, 'A', 'C', 'B');      /* с A на C, B — запасной */
     return 0;

@@ -53,7 +53,7 @@ void my_itoa(int n, char *buf)
         value = -value;
     }
 
-    do {                                  /* цифры выходят в обратном порядке */
+    do {                          /* цифры выходят задом наперёд */
         tmp[i++] = (char)('0' + value % 10);
         value /= 10;
     } while (value > 0);

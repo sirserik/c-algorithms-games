@@ -6,7 +6,7 @@ int is_prime(int n)
     if (n < 2) {
         return 0;             /* 0, 1 и отрицательные — не простые */
     }
-    for (int d = 2; d * d <= n; d++) {
+    for (int d = 2; d <= n / d; d++) {   /* то же, что d * d <= n */
         if (n % d == 0) {
             return 0;         /* нашли делитель — составное */
         }

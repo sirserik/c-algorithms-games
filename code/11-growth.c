@@ -7,6 +7,9 @@
  * настоящую цену роста: сколько элементов пришлось перетащить.
  * Абсолютные секунды зависят от машины, а разница в числе копирований
  * — нет, она чисто математическая.
+ *
+ * Счётчики — long long: при +1 копирований почти пять миллиардов, это
+ * больше 2^31. Тип long на Windows 32-битный и переполнился бы.
  */
 
 #include <stdio.h>
@@ -15,11 +18,11 @@
 
 /* Стратегия «расширяем ровно на один элемент».
  * Возвращает, сколько элементов всего было скопировано. */
-long grow_by_one(int n)
+long long grow_by_one(int n)
 {
     int *data = NULL;
     int capacity = 0;
-    long copied = 0;
+    long long copied = 0;
 
     for (int value = 0; value < n; value++) {
         int *bigger = malloc((size_t)(capacity + 1) * sizeof(int));
@@ -42,12 +45,12 @@ long grow_by_one(int n)
 }
 
 /* Стратегия «кончилось место — удваиваем». */
-long grow_doubling(int n)
+long long grow_doubling(int n)
 {
     int *data = NULL;
     int capacity = 0;
     int count = 0;
-    long copied = 0;
+    long long copied = 0;
 
     for (int value = 0; value < n; value++) {
         if (count == capacity) {
@@ -81,11 +84,11 @@ int main(void)
     int n = 100000;
 
     clock_t t0 = clock();
-    long one = grow_by_one(n);
+    long long one = grow_by_one(n);
     double one_sec = (double)(clock() - t0) / CLOCKS_PER_SEC;
 
     t0 = clock();
-    long twice = grow_doubling(n);
+    long long twice = grow_doubling(n);
     double twice_sec = (double)(clock() - t0) / CLOCKS_PER_SEC;
 
     if (one < 0 || twice < 0) {
@@ -94,9 +97,9 @@ int main(void)
     }
 
     printf("вставляем %d элементов\n", n);
-    printf("рост на +1:   скопировано %ld элементов, %.3f c\n",
+    printf("рост на +1:   скопировано %lld элементов, %.3f c\n",
            one, one_sec);
-    printf("удвоение:     скопировано %ld элементов, %.3f c\n",
+    printf("удвоение:     скопировано %lld элементов, %.3f c\n",
            twice, twice_sec);
     printf("копирований меньше в %.0f раз\n", (double)one / (double)twice);
     return 0;

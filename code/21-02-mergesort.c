@@ -34,7 +34,7 @@ void merge_sort(int a[], int tmp[], int lo, int hi)
     if (lo >= hi) {
         return;
     }
-    int mid = lo + (hi - lo) / 2;   /* так не переполнится при больших lo,hi */
+    int mid = lo + (hi - lo) / 2;   /* без переполнения lo + hi */
     merge_sort(a, tmp, lo, mid);
     merge_sort(a, tmp, mid + 1, hi);
     merge(a, tmp, lo, mid, hi);

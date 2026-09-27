@@ -36,6 +36,18 @@ int main(void)
     swap(&a, &b);
     printf("после swap: a=%d b=%d\n", a, b);
 
+    /* Арифметика указателей: шаг — один элемент, а не один байт. */
+    int arr[4] = {10, 20, 30, 40};
+    int *first = arr;              /* то же, что &arr[0] */
+    int *third = first + 2;        /* на два int дальше */
+
+    printf("first     = %p\n", (void *)first);
+    printf("first + 1 = %p\n", (void *)(first + 1));
+    printf("*(first + 2) = %d, arr[2] = %d, *third = %d\n",
+           *(first + 2), arr[2], *third);
+    printf("third - first = %td\n", third - first);
+    printf("байт между ними: %td\n", (char *)third - (char *)first);
+
     int *q = NULL;
     printf("q = %p\n", (void *)q);
     if (q == NULL) {

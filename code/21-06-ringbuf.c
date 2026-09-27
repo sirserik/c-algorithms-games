@@ -52,7 +52,7 @@ int main(void)
     ring_pop(&r, &x);
     printf("pop %d\n", x);
 
-    ring_push(&r, 7);    /* место освободилось — кольцо завернулось в начало */
+    ring_push(&r, 7);    /* место освободилось: запись уходит в начало */
     ring_push(&r, 8);
 
     while (ring_pop(&r, &x)) {

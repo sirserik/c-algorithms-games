@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NBUCKETS 16
-
 /* Узел LRU-кэша живёт сразу в двух структурах:
    - в двусвязном списке «по свежести» (prev/next): голова — самый
      свежий, хвост — самый старый кандидат на вытеснение;
@@ -16,27 +14,38 @@ typedef struct Node {
 } Node;
 
 typedef struct {
-    int capacity;
-    int size;
+    int capacity;         /* сколько записей помещается */
+    int size;             /* сколько записей сейчас */
     Node *head;           /* самый свежий */
     Node *tail;           /* самый старый */
-    Node *buckets[NBUCKETS];
+    Node **buckets;       /* массив корзин: их столько же, сколько мест */
+    unsigned nbuckets;
 } LRU;
 
-void lru_init(LRU *c, int capacity)
+/* 1 — готово, 0 — неверная вместимость или нет памяти. */
+int lru_init(LRU *c, int capacity)
 {
+    if (capacity < 1) {
+        return 0;
+    }
+    c->buckets = malloc((size_t)capacity * sizeof(Node *));
+    if (c->buckets == NULL) {
+        return 0;
+    }
+    c->nbuckets = (unsigned)capacity;
+    for (unsigned i = 0; i < c->nbuckets; i++) {
+        c->buckets[i] = NULL;
+    }
     c->capacity = capacity;
     c->size = 0;
     c->head = NULL;
     c->tail = NULL;
-    for (int i = 0; i < NBUCKETS; i++) {
-        c->buckets[i] = NULL;
-    }
+    return 1;
 }
 
-static unsigned bucket_of(int key)
+static unsigned bucket_of(const LRU *c, int key)
 {
-    return (unsigned)key % NBUCKETS;
+    return (unsigned)key % c->nbuckets;
 }
 
 /* убрать узел из списка свежести (хеш не трогаем) */
@@ -68,14 +77,25 @@ static void list_push_front(LRU *c, Node *n)
     }
 }
 
-static Node *hash_find(LRU *c, int key)
+static Node *hash_find(const LRU *c, int key)
 {
-    for (Node *e = c->buckets[bucket_of(key)]; e != NULL; e = e->hnext) {
+    Node *e = c->buckets[bucket_of(c, key)];
+    for (; e != NULL; e = e->hnext) {
         if (e->key == key) {
             return e;
         }
     }
     return NULL;
+}
+
+/* убрать узел из его хеш-цепочки */
+static void hash_remove(LRU *c, Node *n)
+{
+    Node **pp = &c->buckets[bucket_of(c, n->key)];
+    while (*pp != n) {
+        pp = &(*pp)->hnext;
+    }
+    *pp = n->hnext;
 }
 
 /* get: 1 и значение в *out, если ключ есть. Обращение освежает запись. */
@@ -91,42 +111,38 @@ int lru_get(LRU *c, int key, int *out)
     return 1;
 }
 
-void lru_put(LRU *c, int key, int value)
+/* put: 1 — записано, 0 — не хватило памяти (кэш тогда не меняется). */
+int lru_put(LRU *c, int key, int value)
 {
     Node *n = hash_find(c, key);
     if (n != NULL) {                 /* ключ уже есть — обновим и освежим */
         n->value = value;
         list_unlink(c, n);
         list_push_front(c, n);
-        return;
+        return 1;
+    }
+
+    n = malloc(sizeof(Node));        /* сначала память, потом вытеснение */
+    if (n == NULL) {
+        return 0;
     }
 
     if (c->size == c->capacity) {    /* кэш полон — вытесняем хвост */
         Node *old = c->tail;
         list_unlink(c, old);
-
-        /* выдёргиваем old из его хеш-корзины */
-        unsigned b = bucket_of(old->key);
-        Node **pp = &c->buckets[b];
-        while (*pp != old) {
-            pp = &(*pp)->hnext;
-        }
-        *pp = old->hnext;
-
+        hash_remove(c, old);
         free(old);
         c->size--;
     }
 
-    n = malloc(sizeof(Node));
-    if (n == NULL) {
-        return;
-    }
     n->key = key;
     n->value = value;
-    n->hnext = c->buckets[bucket_of(key)];   /* в начало хеш-цепочки */
-    c->buckets[bucket_of(key)] = n;
-    list_push_front(c, n);                    /* и в голову списка свежести */
+    unsigned b = bucket_of(c, key);
+    n->hnext = c->buckets[b];        /* в начало хеш-цепочки */
+    c->buckets[b] = n;
+    list_push_front(c, n);           /* и в голову списка свежести */
     c->size++;
+    return 1;
 }
 
 void lru_free(LRU *c)
@@ -137,28 +153,37 @@ void lru_free(LRU *c)
         free(p);
         p = nx;
     }
+    free(c->buckets);
+    c->buckets = NULL;
     c->head = NULL;
     c->tail = NULL;
     c->size = 0;
-    for (int i = 0; i < NBUCKETS; i++) {   /* корзины тоже обнуляем: */
-        c->buckets[i] = NULL;              /* иначе останутся висячие */
-    }                                      /* указатели на free-нутые узлы */
 }
 
 int main(void)
 {
     LRU c;
-    lru_init(&c, 2);     /* кэш всего на 2 записи */
-
-    lru_put(&c, 1, 100);
-    lru_put(&c, 2, 200);
+    if (!lru_init(&c, 2)) {          /* кэш всего на 2 записи */
+        printf("Не хватило памяти\n");
+        return 1;
+    }
 
     int v;
+    if (!lru_put(&c, 1, 100) || !lru_put(&c, 2, 200)) {
+        printf("Не хватило памяти\n");
+        lru_free(&c);
+        return 1;
+    }
+
     if (lru_get(&c, 1, &v)) {
         printf("get 1 = %d (теперь 1 свежий)\n", v);
     }
 
-    lru_put(&c, 3, 300); /* вытеснит ключ 2 — он самый старый */
+    if (!lru_put(&c, 3, 300)) {      /* вытеснит ключ 2 — он старейший */
+        printf("Не хватило памяти\n");
+        lru_free(&c);
+        return 1;
+    }
 
     if (!lru_get(&c, 2, &v)) {
         printf("get 2 = промах (вытеснен)\n");

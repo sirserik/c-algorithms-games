@@ -46,7 +46,7 @@ int main(void)
         if (sscanf(line, "%63s %d", name, &score) == 2) {
             players++;
             total += score;
-            printf("%d. %s — %d очков\n", players, name, score);
+            printf("%d. %s — очков: %d\n", players, name, score);
         } else {
             printf("не разобрал строку: \"%s\"\n", line);
         }
