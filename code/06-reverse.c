@@ -6,7 +6,11 @@ int main(void)
 {
     int n;
     printf("Сколько чисел? ");
-    if (scanf("%d", &n) != 1 || n <= 0 || n > MAXN) {
+    if (scanf("%d", &n) != 1) {
+        printf("Это не число.\n");
+        return 1;
+    }
+    if (n <= 0 || n > MAXN) {
         printf("Нужно от 1 до %d чисел.\n", MAXN);
         return 1;
     }
@@ -20,19 +24,19 @@ int main(void)
         }
     }
 
-    int i = 0;
-    int j = n - 1;
-    while (i < j) {
-        int t = a[i];
-        a[i] = a[j];
-        a[j] = t;
-        i++;
-        j--;
+    int left = 0;          /* левый палец — на первом элементе */
+    int right = n - 1;     /* правый палец — на последнем */
+    while (left < right) {
+        int t = a[left];
+        a[left] = a[right];
+        a[right] = t;
+        left++;
+        right--;
     }
 
     printf("Развёрнутый массив:");
-    for (int k = 0; k < n; k++) {
-        printf(" %d", a[k]);
+    for (int i = 0; i < n; i++) {
+        printf(" %d", a[i]);
     }
     printf("\n");
     return 0;

@@ -14,8 +14,8 @@
 
 #define N 100
 
-long cmps = 0;                  /* сколько раз сравнили два элемента */
-long moves = 0;                 /* сколько раз передвинули элемент */
+int cmps = 0;                   /* сколько раз сравнили два элемента */
+int moves = 0;                  /* сколько раз передвинули элемент */
 
 void bubble_sort(int a[], int n)
 {
@@ -88,16 +88,22 @@ void fill(int a[], int n, int kind)
     }
 }
 
-/* Печатаем одну строку таблицы: сравнения, перемещения, подпись. */
-void report(const char *title, const char *input)
+/* Печатаем одну строку таблицы: сравнения, перемещения, подпись.
+   kind — тот же номер входа, что в fill: 0, 1 или 2. */
+void report(const char *title, int kind)
 {
-    printf("%9ld %11ld   %s, %s\n", cmps, moves, title, input);
+    printf("%9d %11d   %s, ", cmps, moves, title);
+    if (kind == 0) {
+        printf("отсортирован\n");
+    } else if (kind == 1) {
+        printf("задом наперёд\n");
+    } else {
+        printf("перемешан\n");
+    }
 }
 
 int main(void)
 {
-    const char *inputs[] = {"отсортирован", "задом наперёд",
-                            "перемешан"};
     int a[N];
 
     printf("n = %d, n(n-1)/2 = %d\n\n", N, N * (N - 1) / 2);
@@ -107,21 +113,21 @@ int main(void)
         cmps = 0;
         moves = 0;
         bubble_sort(a, N);
-        report("пузырёк", inputs[kind]);
+        report("пузырёк", kind);
     }
     for (int kind = 0; kind < 3; kind++) {
         fill(a, N, kind);
         cmps = 0;
         moves = 0;
         selection_sort(a, N);
-        report("выбором", inputs[kind]);
+        report("выбором", kind);
     }
     for (int kind = 0; kind < 3; kind++) {
         fill(a, N, kind);
         cmps = 0;
         moves = 0;
         insertion_sort(a, N);
-        report("вставками", inputs[kind]);
+        report("вставками", kind);
     }
     return 0;
 }

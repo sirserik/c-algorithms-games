@@ -13,18 +13,6 @@
 #include <stdio.h>
 #include <limits.h>
 
-/* Печатает слово, прижав его к правому краю поля шириной width.
-   Обычный "%17s" тут не годится: он считает БАЙТЫ, а русская буква в
-   UTF-8 занимает два байта, и таблица разъезжается. Поэтому длину в
-   символах передаём руками. */
-static void print_word(int width, const char *word, int chars)
-{
-    for (int k = chars; k < width; k++) {
-        printf(" ");
-    }
-    printf("%s", word);
-}
-
 int main(void)
 {
     int fact_int = 1;        /* факториал в int */
@@ -55,16 +43,12 @@ int main(void)
         if (int_ok) {
             printf(" %17d |", fact_int);
         } else {
-            printf(" ");
-            print_word(17, "переполнение", 12);
-            printf(" |");
+            printf("      переполнение |");   /* 1 + 5 пробелов + 12 букв */
         }
         if (ll_ok) {
             printf(" %22lld\n", fact_ll);
         } else {
-            printf(" ");
-            print_word(22, "переполнение", 12);
-            printf("\n");
+            printf("           переполнение\n");   /* 1 + 10 пробелов + 12 */
         }
     }
 

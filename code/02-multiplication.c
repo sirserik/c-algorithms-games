@@ -2,7 +2,10 @@
 
 int is_even(int x)
 {
-    return x % 2 == 0;
+    if (x % 2 == 0) {
+        return 1;
+    }
+    return 0;
 }
 
 int main(void)

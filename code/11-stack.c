@@ -23,7 +23,8 @@ int push(struct Stack *s, int value)
     if (s->top == CAPACITY) {
         return 0;
     }
-    s->data[s->top] = value;
+    int free_cell = s->top;             /* первая свободная ячейка */
+    s->data[free_cell] = value;
     s->top++;
     return 1;
 }
@@ -45,7 +46,8 @@ int peek(const struct Stack *s, int *out)
     if (s->top == 0) {
         return 0;
     }
-    *out = s->data[s->top - 1];
+    int top_cell = s->top - 1;          /* верхняя занятая ячейка */
+    *out = s->data[top_cell];
     return 1;
 }
 
@@ -77,6 +79,18 @@ int main(void)
     if (pop(&s, &x) == 0) {
         printf("pop на пустом стеке: вернул 0, x не тронут (там %d)\n", x);
     }
+
+    /* Стек в деле: переворачиваем слово. Буква — это число (её код),
+     * поэтому она ложится в наш стек целых. */
+    const char *word = "stack";
+    for (int i = 0; word[i] != '\0'; i++) {
+        push(&s, word[i]);
+    }
+    printf("%s задом наперёд: ", word);
+    while (pop(&s, &x)) {
+        printf("%c", x);
+    }
+    printf("\n");
 
     return 0;
 }

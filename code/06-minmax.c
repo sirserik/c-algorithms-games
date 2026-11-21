@@ -6,7 +6,11 @@ int main(void)
 {
     int n;
     printf("Сколько чисел? ");
-    if (scanf("%d", &n) != 1 || n <= 0 || n > MAXN) {
+    if (scanf("%d", &n) != 1) {
+        printf("Это не число.\n");
+        return 1;
+    }
+    if (n <= 0 || n > MAXN) {
         printf("Нужно от 1 до %d чисел.\n", MAXN);
         return 1;
     }

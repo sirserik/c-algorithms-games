@@ -79,7 +79,9 @@ int main(void)
        процессор не может «запомнить дорогу», и время честнее. */
     t0 = clock();
     for (int q = 0; q < queries; q++) {
-        sink += binary_search(a, n, (q * 7919 % n) * 2);
+        int index = (q * 7919) % n;  /* каждый раз другой: 0, 7919, ... */
+        int target = a[index];       /* число, которое точно есть */
+        sink += binary_search(a, n, target);
     }
     double bin_mix = (double)(clock() - t0) / CLOCKS_PER_SEC;
 

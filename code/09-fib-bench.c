@@ -15,8 +15,11 @@
 /* Наивная рекурсия — та самая, что в 09-fib.c. */
 long long fib_slow(int n)
 {
-    if (n < 2) {
-        return n;
+    if (n == 0) {
+        return 0;                /* база: fib(0) = 0 */
+    }
+    if (n == 1) {
+        return 1;                /* база: fib(1) = 1 */
     }
     return fib_slow(n - 1) + fib_slow(n - 2);
 }
@@ -29,8 +32,11 @@ long long calls = 0;
 long long fib_counted(int n)
 {
     calls++;                       /* нас вызвали — отмечаем */
-    if (n < 2) {
-        return n;
+    if (n == 0) {
+        return 0;                /* база: fib(0) = 0 */
+    }
+    if (n == 1) {
+        return 1;                /* база: fib(1) = 1 */
     }
     return fib_counted(n - 1) + fib_counted(n - 2);
 }
@@ -38,14 +44,17 @@ long long fib_counted(int n)
 /* Быстрый вариант из главы — для сравнения. */
 long long fib_fast(int n)
 {
-    long long a = 0;
-    long long b = 1;
-    for (int i = 0; i < n; i++) {
-        long long next = a + b;
-        a = b;
-        b = next;
+    if (n == 0) {
+        return 0;
     }
-    return a;
+    long long prev = 0;              /* fib(0) */
+    long long curr = 1;              /* fib(1) */
+    for (int i = 2; i <= n; i++) {
+        long long next = prev + curr;    /* следующее число */
+        prev = curr;                     /* сдвигаем окно вправо */
+        curr = next;
+    }
+    return curr;                     /* fib(n) */
 }
 
 int main(void)

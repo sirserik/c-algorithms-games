@@ -37,8 +37,14 @@ Node *intersection(Node *a, Node *b)
     int la = length(a);
     int lb = length(b);
 
-    while (la > lb) { a = a->next; la--; }
-    while (lb > la) { b = b->next; lb--; }
+    while (la > lb) {       /* A длиннее — проматываем A */
+        a = a->next;
+        la--;
+    }
+    while (lb > la) {       /* B длиннее — проматываем B */
+        b = b->next;
+        lb--;
+    }
 
     while (a != b) {        /* сравниваем АДРЕСА узлов, не значения */
         a = a->next;

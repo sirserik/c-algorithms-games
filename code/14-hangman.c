@@ -5,27 +5,34 @@
 
 #define MAX_WRONG 6   /* сколько ошибок позволяем до проигрыша */
 
-/* Рисует слово: открытые буквы — как есть, закрытые — подчёркиванием.
-   Возвращает, сколько букв уже открыто. */
-int draw_word(const char *word, const int *guessed)
+/* Рисует слово: названные буквы - как есть, остальные - прочерком. */
+void draw_word(const char word[], const int guessed[])
 {
-    int revealed = 0;
     for (int i = 0; word[i] != '\0'; i++) {
         char ch = word[i];
-        if (ch < 'a' || ch > 'z') {   /* не строчная латиница: */
-            printf("%c ", ch);        /* показываем как есть,   */
-            revealed++;               /* угадывать её не нужно  */
+        if (ch < 'a' || ch > 'z') {   /* не строчная латиница:  */
+            printf("%c ", ch);        /* показываем как есть    */
             continue;
         }
-        if (guessed[ch - 'a']) {
+        if (guessed[ch - 'a'] == 1) {
             printf("%c ", ch);
-            revealed++;
         } else {
             printf("_ ");
         }
     }
     printf("\n");
-    return revealed;
+}
+
+/* 1 - все буквы слова уже названы, 0 - ещё нет */
+int word_is_open(const char word[], const int guessed[])
+{
+    for (int i = 0; word[i] != '\0'; i++) {
+        char ch = word[i];
+        if (ch >= 'a' && ch <= 'z' && guessed[ch - 'a'] == 0) {
+            return 0;                 /* нашлась закрытая буква */
+        }
+    }
+    return 1;
 }
 
 int main(void)
@@ -34,17 +41,65 @@ int main(void)
         "apple", "banana", "orange", "computer", "program",
         "keyboard", "function", "pointer", "rainbow", "elephant"
     };
-    int word_count = (int)(sizeof words / sizeof words[0]);
+    int word_count = (int)(sizeof(words) / sizeof(words[0]));
 
     /* Стадии виселицы: индекс = число ошибок (0..MAX_WRONG). */
     const char *gallows[MAX_WRONG + 1] = {
-        "  +---+\n  |   |\n      |\n      |\n      |\n      |\n=========",
-        "  +---+\n  |   |\n  O   |\n      |\n      |\n      |\n=========",
-        "  +---+\n  |   |\n  O   |\n  |   |\n      |\n      |\n=========",
-        "  +---+\n  |   |\n  O   |\n /|   |\n      |\n      |\n=========",
-        "  +---+\n  |   |\n  O   |\n /|\\  |\n      |\n      |\n=========",
-        "  +---+\n  |   |\n  O   |\n /|\\  |\n /    |\n      |\n=========",
-        "  +---+\n  |   |\n  O   |\n /|\\  |\n / \\  |\n      |\n========="
+        "  +---+\n"
+        "  |   |\n"
+        "      |\n"
+        "      |\n"
+        "      |\n"
+        "      |\n"
+        "=========",
+
+        "  +---+\n"
+        "  |   |\n"
+        "  O   |\n"
+        "      |\n"
+        "      |\n"
+        "      |\n"
+        "=========",
+
+        "  +---+\n"
+        "  |   |\n"
+        "  O   |\n"
+        "  |   |\n"
+        "      |\n"
+        "      |\n"
+        "=========",
+
+        "  +---+\n"
+        "  |   |\n"
+        "  O   |\n"
+        " /|   |\n"
+        "      |\n"
+        "      |\n"
+        "=========",
+
+        "  +---+\n"
+        "  |   |\n"
+        "  O   |\n"
+        " /|\\  |\n"
+        "      |\n"
+        "      |\n"
+        "=========",
+
+        "  +---+\n"
+        "  |   |\n"
+        "  O   |\n"
+        " /|\\  |\n"
+        " /    |\n"
+        "      |\n"
+        "=========",
+
+        "  +---+\n"
+        "  |   |\n"
+        "  O   |\n"
+        " /|\\  |\n"
+        " / \\  |\n"
+        "      |\n"
+        "========="
     };
 
     srand((unsigned int)time(NULL));
@@ -52,7 +107,7 @@ int main(void)
     const char *secret = words[rand() % word_count];
     int len = (int)strlen(secret);
 
-    /* guessed[c - 'a'] == 1, если букву уже называли */
+    /* guessed[номер буквы] == 1, если букву уже называли */
     int guessed[26] = {0};
     int wrong = 0;
 
@@ -61,8 +116,8 @@ int main(void)
     while (wrong < MAX_WRONG) {
         printf("\n%s\n\n", gallows[wrong]);
 
-        int revealed = draw_word(secret, guessed);
-        if (revealed == len) {
+        draw_word(secret, guessed);
+        if (word_is_open(secret, guessed) == 1) {
             printf("Победа! Слово: %s\n", secret);
             return 0;
         }
@@ -72,7 +127,7 @@ int main(void)
 
         char c;
         if (scanf(" %c", &c) != 1) {
-            /* ввод кончился (Ctrl+D) — это не проигрыш, а выход */
+            /* ввод кончился (Ctrl+D) - это не проигрыш, а выход */
             printf("\nИгра прервана. Слово было: %s\n", secret);
             return 0;
         }
@@ -84,11 +139,13 @@ int main(void)
             printf("Это не английская буква. Попробуй ещё.\n");
             continue;
         }
-        if (guessed[c - 'a']) {
+
+        int index = c - 'a';             /* номер буквы: 0..25 */
+        if (guessed[index] == 1) {
             printf("Букву '%c' ты уже называл.\n", c);
             continue;
         }
-        guessed[c - 'a'] = 1;
+        guessed[index] = 1;
 
         int found = 0;
         for (int i = 0; i < len; i++) {
@@ -97,7 +154,7 @@ int main(void)
                 break;
             }
         }
-        if (found) {
+        if (found == 1) {
             printf("Есть такая буква!\n");
         } else {
             wrong++;

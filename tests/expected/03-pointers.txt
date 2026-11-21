@@ -9,7 +9,5 @@ p хранит адрес:    0xADDR
 first     = 0xADDR
 first + 1 = 0xADDR
 *(first + 2) = 30, arr[2] = 30, *third = 30
-third - first = 2
-байт между ними: 8
 q = 0xADDR
 q никуда не указывает, *q писать нельзя

@@ -30,7 +30,8 @@ int enqueue(struct Queue *q, int value)
     if (q->count == CAPACITY) {
         return 0;
     }
-    q->data[queue_tail(q)] = value;
+    int tail = queue_tail(q);           /* куда встанет новый */
+    q->data[tail] = value;
     q->count++;
     return 1;
 }

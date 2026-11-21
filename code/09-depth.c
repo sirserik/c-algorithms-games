@@ -17,13 +17,13 @@
 
 #include <stdio.h>
 
-long depth = 0;                 /* текущая глубина вложенности */
+int depth = 0;                  /* текущая глубина вложенности */
 
 long long sum_to(int n)
 {
     depth++;                    /* легла ещё одна «тарелка» на стек */
     if (depth % 10000 == 0) {
-        printf("глубина %ld\n", depth);
+        printf("глубина %d\n", depth);
         fflush(stdout);         /* печатаем сразу, а не в буфер:
                                    после падения буфер пропадёт */
     }

@@ -6,12 +6,12 @@
 
 int main(void)
 {
-    const char *path = "scores.txt";
+    const char *path = "scores.txt";   /* имя файла — в одном месте */
 
     /* --- 1. Пишем файл --- */
     FILE *out = fopen(path, "w");
     if (out == NULL) {
-        printf("Не могу открыть %s на запись\n", path);
+        fprintf(stderr, "Не могу открыть %s на запись\n", path);
         return 1;
     }
 
@@ -20,7 +20,7 @@ int main(void)
     fprintf(out, "vika 143\n");
 
     if (fclose(out) != 0) {
-        printf("Ошибка при закрытии %s\n", path);
+        fprintf(stderr, "Ошибка при закрытии %s\n", path);
         return 1;
     }
     printf("Записал 3 строки в %s\n", path);
@@ -28,7 +28,7 @@ int main(void)
     /* --- 2. Читаем файл обратно --- */
     FILE *in = fopen(path, "r");
     if (in == NULL) {
-        printf("Не могу открыть %s на чтение\n", path);
+        fprintf(stderr, "Не могу открыть %s на чтение\n", path);
         return 1;
     }
 
@@ -38,8 +38,9 @@ int main(void)
 
     while (fgets(line, sizeof line, in) != NULL) {
         size_t len = strlen(line);
-        if (len > 0 && line[len - 1] == '\n')
+        if (len > 0 && line[len - 1] == '\n') {
             line[len - 1] = '\0';       /* срезаем перевод строки */
+        }
 
         char name[64];
         int score;
@@ -52,12 +53,14 @@ int main(void)
         }
     }
 
-    if (ferror(in))
-        printf("Чтение оборвалось на ошибке\n");
+    if (ferror(in)) {
+        fprintf(stderr, "Чтение оборвалось на ошибке\n");
+    }
     fclose(in);
 
-    if (players > 0)
+    if (players > 0) {
         printf("Игроков: %d, всего очков: %d\n", players, total);
+    }
 
     remove(path);                       /* убираем за собой */
     return 0;

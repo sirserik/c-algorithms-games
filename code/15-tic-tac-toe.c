@@ -49,24 +49,26 @@ int has_won(char board[3][3], char player)
     return 0;
 }
 
-/* Все девять клеток заняты фигурами? */
-int board_is_full(char board[3][3])
+/* Дочитывает строку до конца (как в главе 12): 1 - в остатке
+   были только пробелы, 0 - там нашлось что-то ещё. */
+int rest_is_empty(void)
 {
-    for (int row = 0; row < 3; row++) {
-        for (int col = 0; col < 3; col++) {
-            if (board[row][col] != 'X' && board[row][col] != 'O') {
-                return 0;
-            }
+    int empty = 1;
+    int c = getchar();
+    while (c != '\n' && c != EOF) {
+        if (c != ' ' && c != '\t') {
+            empty = 0;
         }
+        c = getchar();
     }
-    return 1;
+    return empty;
 }
 
 int main(void)
 {
     char board[3][3];
 
-    /* Заполняем поле цифрами '1'..'9' — это подсказка номеров клеток. */
+    /* Заполняем поле цифрами '1'..'9' - подсказками номеров. */
     char digit = '1';
     for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
@@ -86,18 +88,15 @@ int main(void)
         printf("Ход игрока %c. Клетка (1-9): ", player);
 
         int cell;
-        int rc = scanf("%d", &cell);
-
+        int rc = scanf("%9d", &cell);
         if (rc == EOF) {                 /* ввод закончился (Ctrl+D) */
             printf("\nИгра прервана.\n");
             return 0;
         }
-        if (rc != 1) {                   /* ввели не число */
-            printf("Это не число. Введи цифру от 1 до 9.\n");
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF) {
-                /* выбрасываем мусорный ввод до конца строки */
-            }
+
+        int empty = rest_is_empty();
+        if (rc != 1 || empty == 0) {
+            printf("Не понял. Введи одно число от 1 до 9.\n");
             continue;
         }
         if (cell < 1 || cell > 9) {
@@ -117,12 +116,12 @@ int main(void)
         board[row][col] = player;        /* ставим фигуру */
         moves++;
 
-        if (has_won(board, player)) {
+        if (has_won(board, player) == 1) {
             print_board(board);
             printf("Победил игрок %c! Ходов: %d.\n", player, moves);
             return 0;
         }
-        if (board_is_full(board)) {
+        if (moves == 9) {                /* девять ходов - поле полное */
             print_board(board);
             printf("Ничья! Поле заполнено.\n");
             return 0;

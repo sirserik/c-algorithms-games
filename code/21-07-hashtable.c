@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NBUCKETS 16   /* число корзин (степень двойки — удобно) */
+#define NBUCKETS 16   /* число корзин: маленькое, для примера */
 
 /* Запись в цепочке: ключ-строка, счётчик и указатель на следующую
    запись в той же корзине (разрешение коллизий цепочками). */
@@ -20,9 +20,9 @@ typedef struct {
 unsigned long hash_str(const char *s)
 {
     unsigned long h = 5381;
-    int c;
-    while ((c = (unsigned char)*s++) != 0) {
-        h = h * 33u + (unsigned long)c;
+    for (size_t i = 0; s[i] != '\0'; i++) {
+        unsigned char c = (unsigned char)s[i];   /* байт без знака */
+        h = h * 33u + c;
     }
     return h;
 }

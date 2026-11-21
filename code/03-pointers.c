@@ -45,8 +45,6 @@ int main(void)
     printf("first + 1 = %p\n", (void *)(first + 1));
     printf("*(first + 2) = %d, arr[2] = %d, *third = %d\n",
            *(first + 2), arr[2], *third);
-    printf("third - first = %td\n", third - first);
-    printf("байт между ними: %td\n", (char *)third - (char *)first);
 
     int *q = NULL;
     printf("q = %p\n", (void *)q);

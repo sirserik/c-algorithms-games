@@ -44,9 +44,9 @@ int gcd(int a, int b)
     }
 
     while (b != 0) {
-        int t = b;
-        b = a % b;
-        a = t;
+        int rest = a % b;   /* остаток от деления a на b */
+        a = b;              /* второе число становится первым */
+        b = rest;           /* остаток становится вторым */
     }
     return a;
 }

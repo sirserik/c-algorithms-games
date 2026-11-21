@@ -1,15 +1,15 @@
 /* Глава 17. Игра «Змейка» в терминале.
  *
- * Управление: W A S D — вверх/влево/вниз/вправо, q — выход.
+ * Управление: W A S D или стрелки, q — выход.
  * Компиляция (macOS/Linux):
  *   cc -std=c11 -Wall -Wextra -O2 17-snake.c -o snake
  *
  * Программа интерактивная: запускать в обычном терминале, не в пайпе.
  */
 
-/* На Linux (glibc) со строгим -std=c11 объявление usleep спрятано за
-   этим макросом. На macOS он ничего не меняет — но пусть стоит, чтобы
-   файл собирался одинаково на обеих системах. Ставить ДО #include. */
+/* usleep не из стандарта Си, а из POSIX. На Linux строгий -std=c11
+   прячет её объявление, и эта строка просит его показать. На macOS
+   она ничего не меняет, но и не мешает. Ставить ДО #include. */
 #define _DEFAULT_SOURCE
 
 #include <stdio.h>
@@ -25,22 +25,25 @@
 #define MAX_LEN (WIDTH * HEIGHT)   /* змейка не длиннее всех клеток поля */
 
 /* ---- Состояние игры ---- */
-static int snake_x[MAX_LEN];   /* координаты сегментов: [0] — голова */
-static int snake_y[MAX_LEN];
-static int snake_len;          /* сколько сегментов сейчас */
-static int dir_x, dir_y;       /* куда голова поедет в следующем кадре */
-static int moved_x, moved_y;   /* куда она реально поехала в прошлом кадре */
-static int food_x, food_y;     /* где лежит еда */
-static int score;              /* счёт */
-static int game_over;          /* 0 — играем, 1 — конец */
-static int game_won;           /* 1 — змейка заняла всё поле */
+int snake_x[MAX_LEN];   /* координаты сегментов: [0] — голова */
+int snake_y[MAX_LEN];
+int snake_len;          /* сколько сегментов сейчас */
+int dir_x;              /* куда голова поедет в следующем кадре */
+int dir_y;
+int moved_x;            /* куда она реально поехала в прошлом кадре */
+int moved_y;
+int food_x;             /* где лежит еда */
+int food_y;
+int score;              /* счёт */
+int game_over;          /* 0 — играем, 1 — конец */
+int game_won;           /* 1 — змейка заняла всё поле */
 
 /* ---- Сырой режим терминала ---- */
-static struct termios orig_termios;   /* сюда сохраним исходные настройки */
-static int raw_saved;                 /* 1 — orig_termios заполнен */
+struct termios orig_termios;   /* сюда сохраним исходные настройки */
+int raw_saved;                 /* 1 — orig_termios заполнен */
 
 /* Вернуть терминал в нормальный режим. */
-static void disable_raw_mode(void)
+void disable_raw_mode(void)
 {
     if (raw_saved) {
         tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
@@ -48,72 +51,59 @@ static void disable_raw_mode(void)
 }
 
 /* Применить игровой режим поверх сохранённых настроек. */
-static void apply_raw_mode(void)
+void apply_raw_mode(void)
 {
-    struct termios raw = orig_termios;         /* копия для правки */
+    struct termios raw = orig_termios;          /* копия для правки */
 
-    raw.c_lflag &= ~(ICANON | ECHO);           /* снять канонику и эхо */
-    raw.c_cc[VMIN]  = 0;                       /* read не ждёт символов */
-    raw.c_cc[VTIME] = 0;                       /* и не ждёт по таймеру */
+    raw.c_lflag = raw.c_lflag & ~(ICANON | ECHO); /* без Enter и эха */
+    raw.c_cc[VMIN] = 0;                         /* read не ждёт символов */
+    raw.c_cc[VTIME] = 0;                        /* и не ждёт по таймеру */
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &raw);    /* применить сейчас же */
+    tcsetattr(STDIN_FILENO, TCSANOW, &raw);     /* применить сейчас же */
 }
 
-/* Смертельный сигнал (Ctrl+C, kill, закрытие окна): чиним терминал и
-   только потом умираем. Сигнал убивает процесс мимо atexit — поэтому
-   и перехватываем. */
-static void on_fatal_signal(int sig)
+/* Включить «сырой» неблокирующий ввод: без ожидания Enter и без эха.
+   Возвращает 1 при успехе, 0 — если ввод не терминал (пайп, файл). */
+int enable_raw_mode(void)
+{
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
+        return 0;                               /* это не терминал */
+    }
+    raw_saved = 1;                              /* запомнили как было */
+    apply_raw_mode();
+    return 1;
+}
+
+/* Ctrl+C, kill, закрытие окна: чиним терминал и выходим сами. */
+void on_fatal_signal(int sig)
 {
     disable_raw_mode();
     _exit(128 + sig);    /* 128 + номер сигнала — так принято в шеллах */
 }
 
-/* Ctrl+Z: отдать терминал шеллу в нормальном виде и честно уснуть. */
-static void on_sigtstp(int sig)
+/* Нас разбудили командой fg — снова включаем игровой режим. */
+void on_sigcont(int sig)
 {
     (void)sig;
-    disable_raw_mode();
-    signal(SIGTSTP, SIG_DFL);   /* вернуть штатное поведение... */
-    raise(SIGTSTP);             /* ...и остановиться по-настоящему */
-}
-
-/* Нас разбудили командой fg — снова забираем терминал под игру. */
-static void on_sigcont(int sig)
-{
-    (void)sig;
-    signal(SIGTSTP, on_sigtstp);   /* заново повесить наш обработчик */
     apply_raw_mode();
-}
-
-/* Включить «сырой» неблокирующий ввод: без ожидания Enter и без эха.
-   Возвращает 1 при успехе, 0 — если ввод не терминал (пайп, файл). */
-static int enable_raw_mode(void)
-{
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
-        return 0;                              /* это не терминал */
-    }
-    raw_saved = 1;                             /* запомнили как было */
-    apply_raw_mode();
-    return 1;
 }
 
 /* Прочитать одну клавишу. Если её нет — вернуть -1 (не ждём ввода). */
-static int read_key(void)
+int read_key(void)
 {
-    char c;
-    ssize_t n = read(STDIN_FILENO, &c, 1);
-    if (n == 1) {
-        return (unsigned char)c;
+    unsigned char c;                        /* байт 0..255 */
+    if (read(STDIN_FILENO, &c, 1) == 1) {   /* прочитали ровно 1 байт */
+        return c;
     }
-    return -1;
+    return -1;                              /* клавиши нет */
 }
 
 /* Положить еду в случайную свободную клетку.
    Возвращает 0, если свободных клеток не осталось: змейка заняла всё
    поле. Без этой проверки цикл ниже крутился бы вечно. */
-static int place_food(void)
+int place_food(void)
 {
-    if (snake_len >= WIDTH * HEIGHT) {
+    if (snake_len >= MAX_LEN) {
         food_x = -1;              /* свободных клеток нет: убираем еду */
         food_y = -1;              /* с поля, чтобы не закрыла голову */
         return 0;
@@ -134,7 +124,7 @@ static int place_food(void)
 }
 
 /* Нарисовать поле, змейку, еду и счёт. */
-static void draw(void)
+void draw(void)
 {
     printf("\033[H\033[2J");   /* курсор в угол + очистка экрана */
 
@@ -170,14 +160,14 @@ static void draw(void)
     }
     putchar('\n');
 
-    printf("Счёт: %d   (WASD — движение, q — выход)\n", score);
+    printf("Счёт: %d   (WASD или стрелки, q — выход)\n", score);
 }
 
 /* Сменить направление, не разрешая разворот на 180 градусов.
    Сравниваем с тем, куда змейка ПОЕХАЛА в прошлом кадре (moved_x/moved_y),
    а не с уже накопленным dir_x/dir_y: иначе два нажатия за один кадр
    (вверх, потом влево, пока ползём вправо) сложились бы в разворот. */
-static void set_dir(int nx, int ny)
+void set_dir(int nx, int ny)
 {
     if (nx == -moved_x && ny == -moved_y) {
         return;   /* противоположное реальному движению — игнорируем */
@@ -186,8 +176,40 @@ static void set_dir(int nx, int ny)
     dir_y = ny;
 }
 
+/* Разобрать одно нажатие: WASD, стрелки или q. */
+void handle_key(int key)
+{
+    if (key == 27) {          /* Escape: так начинается стрелка */
+        read_key();           /* второй байт '[' просто пропускаем */
+        key = read_key();     /* третий байт — буква стрелки */
+        if (key == 'A') {
+            key = 'w';        /* стрелка вверх — то же, что W */
+        } else if (key == 'B') {
+            key = 's';        /* вниз */
+        } else if (key == 'C') {
+            key = 'd';        /* вправо */
+        } else if (key == 'D') {
+            key = 'a';        /* влево */
+        } else {
+            return;           /* какая-то другая клавиша — пропускаем */
+        }
+    }
+
+    if (key == 'w' || key == 'W') {
+        set_dir(0, -1);
+    } else if (key == 's' || key == 'S') {
+        set_dir(0, 1);
+    } else if (key == 'a' || key == 'A') {
+        set_dir(-1, 0);
+    } else if (key == 'd' || key == 'D') {
+        set_dir(1, 0);
+    } else if (key == 'q' || key == 'Q') {
+        game_over = 1;
+    }
+}
+
 /* Один шаг змейки: сдвиг тела, новая голова, столкновения, еда. */
-static void update(void)
+void update(void)
 {
     /* фиксируем направление этого кадра — на него будет смотреть set_dir */
     moved_x = dir_x;
@@ -244,28 +266,30 @@ static void update(void)
 
 int main(void)
 {
-    srand((unsigned)time(NULL));   /* разный «случай» при каждом запуске */
+    srand((unsigned int)time(NULL));   /* новый «случай» при каждом запуске */
 
     if (!enable_raw_mode()) {      /* переключаем терминал в игровой режим */
         fprintf(stderr, "Змейке нужен настоящий терминал: "
                         "запусти ./snake без пайпа и без < файла.\n");
         return 1;
     }
-    atexit(disable_raw_mode);      /* вернуть режим при обычном выходе */
-    signal(SIGINT,  on_fatal_signal);   /* Ctrl+C   */
-    signal(SIGTERM, on_fatal_signal);   /* kill     */
-    signal(SIGQUIT, on_fatal_signal);   /* Ctrl+\   */
-    signal(SIGHUP,  on_fatal_signal);   /* окно закрыли */
-    signal(SIGTSTP, on_sigtstp);        /* Ctrl+Z   */
-    signal(SIGCONT, on_sigcont);        /* fg       */
+    atexit(disable_raw_mode);           /* вернуть режим при любом выходе */
+    signal(SIGINT, on_fatal_signal);    /* Ctrl+C */
+    signal(SIGTERM, on_fatal_signal);   /* kill */
+    signal(SIGQUIT, on_fatal_signal);   /* Ctrl+\ */
+    signal(SIGHUP, on_fatal_signal);    /* окно закрыли */
+    signal(SIGCONT, on_sigcont);        /* fg после Ctrl+Z */
 
     /* начальная змейка из 3 сегментов в центре, ползёт вправо */
     snake_len = 3;
     int cx = WIDTH / 2;
     int cy = HEIGHT / 2;
-    snake_x[0] = cx;     snake_y[0] = cy;
-    snake_x[1] = cx - 1; snake_y[1] = cy;
-    snake_x[2] = cx - 2; snake_y[2] = cy;
+    snake_x[0] = cx;
+    snake_y[0] = cy;
+    snake_x[1] = cx - 1;
+    snake_y[1] = cy;
+    snake_x[2] = cx - 2;
+    snake_y[2] = cy;
     dir_x = 1;
     dir_y = 0;
     moved_x = dir_x;
@@ -278,14 +302,10 @@ int main(void)
     draw();                        /* показываем стартовое поле сразу */
 
     while (!game_over) {
-        /* считываем все накопившиеся нажатия */
+        /* разбираем все нажатия, накопившиеся за кадр */
         int key;
         while ((key = read_key()) != -1) {
-            if (key == 'w' || key == 'W') set_dir(0, -1);
-            else if (key == 's' || key == 'S') set_dir(0, 1);
-            else if (key == 'a' || key == 'A') set_dir(-1, 0);
-            else if (key == 'd' || key == 'D') set_dir(1, 0);
-            else if (key == 'q' || key == 'Q') game_over = 1;
+            handle_key(key);
         }
 
         if (game_over) {
@@ -298,7 +318,7 @@ int main(void)
         usleep(150000);        /* пауза 0,15 с между кадрами */
     }
 
-    disable_raw_mode();        /* ОБЯЗАТЕЛЬНО вернуть терминал как было */
+    disable_raw_mode();        /* счёт печатаем уже в нормальном режиме */
 
     if (game_won) {
         printf("\nПоле заполнено целиком — ты прошёл игру!\n");

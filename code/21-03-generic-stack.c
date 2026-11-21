@@ -16,20 +16,29 @@ typedef struct {
 /* Готовим стек под элементы размера elem_size. 1 — успех, 0 — ошибка. */
 int stack_init(Stack *s, size_t elem_size)
 {
-    if (elem_size == 0 || elem_size > SIZE_MAX / 4) {
-        s->data = NULL;              /* такой размер элемента не годится */
-        return 0;
-    }
+    /* Сначала заполняем все поля: даже если дальше откажем,
+       мусора в структуре не останется. */
+    s->data = NULL;
     s->elem_size = elem_size;
     s->count = 0;
+    s->capacity = 0;
+    if (elem_size == 0 || elem_size > SIZE_MAX / 4) {
+        return 0;            /* такой размер элемента не годится */
+    }
+    s->data = malloc(4 * elem_size);   /* стартуем с 4 мест */
+    if (s->data == NULL) {
+        return 0;
+    }
     s->capacity = 4;
-    s->data = malloc(s->capacity * elem_size);
-    return s->data != NULL;
+    return 1;
 }
 
 /* Кладём элемент: копируем elem_size байт по адресу elem на вершину. */
 int stack_push(Stack *s, const void *elem)
 {
+    if (s->data == NULL) {
+        return 0;              /* стек не готов: init не удался или free */
+    }
     if (s->count == s->capacity) {             /* места нет — растём */
         if (s->capacity > SIZE_MAX / 2 / s->elem_size) {
             return 0;          /* new_cap * elem_size не влезет в size_t */

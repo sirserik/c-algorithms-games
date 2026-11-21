@@ -1,27 +1,35 @@
 /* Проверка к главе 13: сверяем два способа определить победителя
    в «камень, ножницы, бумага» на всех девяти парах ходов.
-   Наивные if из шага 4 против формулы с остатком из шага 5. */
+   Явные if из шага 4 против формулы с остатком из шага 5. */
 
 #include <stdio.h>
 
 enum Move { ROCK, SCISSORS, PAPER };
 
-const char *move_name(int m)
+const char *move_name(int move)
 {
-    if (m == ROCK)     return "камень";
-    if (m == SCISSORS) return "ножницы";
+    if (move == ROCK) {
+        return "камень";
+    }
+    if (move == SCISSORS) {
+        return "ножницы";
+    }
     return "бумага";
 }
 
-/* Наивный способ: 0 - ничья, 1 - игрок, 2 - компьютер. */
-int winner_if(int player, int computer)
+/* 0 - ничья, 1 - выиграл игрок, 2 - выиграл компьютер */
+int round_winner(int player, int computer)
 {
     if (player == computer) {
         return 0;
     }
-    if ((player == ROCK     && computer == SCISSORS) ||
-        (player == SCISSORS && computer == PAPER)    ||
-        (player == PAPER    && computer == ROCK)) {
+    if (player == ROCK && computer == SCISSORS) {
+        return 1;
+    }
+    if (player == SCISSORS && computer == PAPER) {
+        return 1;
+    }
+    if (player == PAPER && computer == ROCK) {
         return 1;
     }
     return 2;
@@ -35,16 +43,17 @@ int winner_mod(int player, int computer)
 
 int main(void)
 {
-    const char *who[3] = { "ничья", "игрок", "компьютер" };
-
-    for (int p = 0; p < 3; p++) {
-        for (int c = 0; c < 3; c++) {
-            int a = winner_if(p, c);
-            int b = winner_mod(p, c);
-            printf("игрок %d (%s) против %d (%s): "
-                   "if=%d формула=%d -> %s%s\n",
-                   p, move_name(p), c, move_name(c), a, b, who[b],
-                   (a == b) ? "" : "   <-- РАСХОЖДЕНИЕ!");
+    for (int player = 0; player < 3; player++) {
+        for (int computer = 0; computer < 3; computer++) {
+            int by_if = round_winner(player, computer);
+            int by_formula = winner_mod(player, computer);
+            printf("%s против %s: if=%d формула=%d",
+                   move_name(player), move_name(computer),
+                   by_if, by_formula);
+            if (by_if != by_formula) {
+                printf("   <-- РАСХОЖДЕНИЕ!");
+            }
+            printf("\n");
         }
     }
     return 0;

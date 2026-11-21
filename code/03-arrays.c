@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-/* Длину массива передаём отдельным аргументом: внутри функции
-   имя массива превращается в указатель, и sizeof тут не поможет. */
+/* Длину массива передаём отдельным аргументом: функция получает
+   только адрес начала массива, и sizeof тут не поможет. */
 int sum(const int a[], int n)
 {
     int s = 0;
@@ -14,7 +14,7 @@ int sum(const int a[], int n)
 int main(void)
 {
     int marks[5] = {4, 5, 3, 5, 2};
-    int n = (int)(sizeof marks / sizeof marks[0]);
+    int n = sizeof(marks) / sizeof(marks[0]);   /* 20 / 4 = 5 */
 
     printf("marks[0] (первая)    = %d\n", marks[0]);
     printf("marks[2] (третья)    = %d\n", marks[2]);
@@ -26,9 +26,9 @@ int main(void)
     }
     printf("\n");
 
-    printf("sizeof marks    = %zu байт\n", sizeof marks);
-    printf("sizeof marks[0] = %zu байт\n", sizeof marks[0]);
-    printf("элементов       = %d\n", n);
+    printf("sizeof(marks)    = %zu байт\n", sizeof(marks));
+    printf("sizeof(marks[0]) = %zu байт\n", sizeof(marks[0]));
+    printf("элементов        = %d\n", n);
 
     int s = sum(marks, n);
     printf("сумма   = %d\n", s);

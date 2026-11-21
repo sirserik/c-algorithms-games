@@ -5,10 +5,12 @@ int main(void)
 {
     int n;
     printf("Сколько чисел? ");
-    /* Верхняя граница нужна не для красоты: ниже считаются i * i
-       для i до 2n - 1, а 46341 * 46341 в int уже не влезает.
-       Переполнение int — неопределённое поведение. */
-    if (scanf("%d", &n) != 1 || n <= 0 || n > 1000) {
+    if (scanf("%d", &n) != 1) {
+        printf("Это не число\n");
+        return 1;
+    }
+    /* потолок 1000 — чтобы вывод помещался на экран */
+    if (n < 1 || n > 1000) {
         printf("Нужно число от 1 до 1000\n");
         return 1;
     }
@@ -20,9 +22,9 @@ int main(void)
     }
 
     for (int i = 0; i < n; i++) {
-        a[i] = i * i;
+        a[i] = i * 10;
     }
-    printf("квадраты (%d шт.):", n);
+    printf("числа (%d шт.):", n);
     for (int i = 0; i < n; i++) {
         printf(" %d", a[i]);
     }
@@ -39,7 +41,7 @@ int main(void)
     a = bigger;
 
     for (int i = n; i < bigger_n; i++) {
-        a[i] = i * i;
+        a[i] = i * 10;
     }
     printf("после realloc (%d шт.):", bigger_n);
     for (int i = 0; i < bigger_n; i++) {

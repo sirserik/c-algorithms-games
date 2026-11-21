@@ -2,6 +2,21 @@
 #include <stdlib.h>
 #include <time.h>
 
+/* дочитывает строку до конца; возвращает 1, если в остатке
+   были только пробелы, и 0, если там нашлось что-то ещё */
+int rest_is_empty(void)
+{
+    int empty = 1;
+    int c = getchar();
+    while (c != '\n' && c != EOF) {
+        if (c != ' ' && c != '\t') {
+            empty = 0;             /* за числом лишний символ */
+        }
+        c = getchar();
+    }
+    return empty;
+}
+
 int main(void)
 {
     srand((unsigned int)time(NULL));
@@ -22,15 +37,9 @@ int main(void)
             return 0;
         }
 
-        int next = getchar();      /* что стоит сразу за числом */
-        while (next == ' ' || next == '\t') {
-            next = getchar();      /* пробелы в конце прощаем */
-        }
-        if (rc != 1 || (next != '\n' && next != EOF)) {
+        int empty = rest_is_empty();
+        if (rc != 1 || empty == 0) {
             printf("Не понял. Введи одно целое число от 1 до 100.\n");
-            while (next != '\n' && next != EOF) {
-                next = getchar();  /* выбрасываем остаток строки */
-            }
             continue;
         }
 

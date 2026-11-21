@@ -90,15 +90,21 @@ int main(void)
 
     print_tagged("до:        ", start, n);
 
-    for (int i = 0; i < n; i++) a[i] = start[i];
+    for (int i = 0; i < n; i++) {
+        a[i] = start[i];
+    }
     bubble_sort(a, n);
     print_tagged("пузырёк:   ", a, n);
 
-    for (int i = 0; i < n; i++) a[i] = start[i];
+    for (int i = 0; i < n; i++) {
+        a[i] = start[i];
+    }
     insertion_sort(a, n);
     print_tagged("вставки:   ", a, n);
 
-    for (int i = 0; i < n; i++) a[i] = start[i];
+    for (int i = 0; i < n; i++) {
+        a[i] = start[i];
+    }
     selection_sort(a, n);
     print_tagged("выбор:     ", a, n);
 

@@ -36,7 +36,8 @@ void tally(const char *s, int count[], int delta)
     for (int i = 0; s[i] != '\0'; i++) {
         unsigned char c = (unsigned char)s[i];
         if (isalpha(c)) {
-            count[tolower(c)] += delta;
+            int letter = tolower(c);    /* 'A' и 'a' -> одна ячейка */
+            count[letter] = count[letter] + delta;
         }
     }
 }

@@ -14,10 +14,16 @@ void print_array(const int a[], int n)
    Возвращает < 0, если первый меньше; 0, если равны; > 0, если больше. */
 int cmp_int(const void *pa, const void *pb)
 {
-    int a = *(const int *)pa;   /* приводим адрес к int* и разыменовываем */
-    int b = *(const int *)pb;
-    if (a < b) return -1;
-    if (a > b) return 1;
+    const int *left = pa;    /* по этому адресу лежит int */
+    const int *right = pb;
+    int x = *left;           /* достаём сами числа */
+    int y = *right;
+    if (x < y) {
+        return -1;
+    }
+    if (x > y) {
+        return 1;
+    }
     return 0;
 }
 

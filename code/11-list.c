@@ -4,9 +4,12 @@
  *   cc -std=c11 -Wall -Wextra -O2 11-list.c -o 11-list
  *   ./11-list
  *
- * Проверка на утечки и на чтение освобождённой памяти:
+ * Проверка на чтение освобождённой памяти:
  *   cc -std=c11 -Wall -Wextra -O1 -g -fsanitize=address,undefined \
  *      11-list.c -o 11-list-san && ./11-list-san
+ * Утечки (санитайзер на macOS их не ищет):
+ *   cc -std=c11 -Wall -Wextra -g 11-list.c -o 11-list-g
+ *   leaks --atExit -- ./11-list-g
  */
 
 #include <stdio.h>
@@ -34,8 +37,10 @@ struct Node *make_node(int value, struct Node *next)
 void print_list(const struct Node *head)
 {
     printf("список: ");
-    for (const struct Node *cur = head; cur != NULL; cur = cur->next) {
+    const struct Node *cur = head;
+    while (cur != NULL) {
         printf("%d -> ", cur->value);
+        cur = cur->next;
     }
     printf("NULL\n");
 }

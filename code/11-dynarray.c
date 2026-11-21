@@ -15,7 +15,7 @@ int main(void)
 {
     int capacity = 2;                       /* сколько влезает сейчас */
     int count = 0;                          /* сколько реально лежит */
-    int *data = malloc((size_t)capacity * sizeof(int));
+    int *data = malloc(capacity * sizeof(int));
     if (data == NULL) {
         printf("Не хватило памяти\n");
         return 1;
@@ -24,8 +24,7 @@ int main(void)
     for (int value = 1; value <= 10; value++) {
         if (count == capacity) {            /* заполнили — растём */
             capacity = capacity * 2;
-            int *bigger = realloc(data,
-                                  (size_t)capacity * sizeof(int));
+            int *bigger = realloc(data, capacity * sizeof(int));
             if (bigger == NULL) {           /* не дали — старое цело */
                 printf("Не хватило памяти при росте\n");
                 free(data);

@@ -78,7 +78,7 @@ void place_mines(int safe_r, int safe_c)
     }
 }
 
-/* Напечатать поле. Если show_mines != 0 — показать и мины (при проигрыше). */
+/* Напечатать поле. show_mines != 0 — показать и мины (при проигрыше). */
 void print_board(int show_mines)
 {
     printf("   ");
@@ -105,6 +105,22 @@ void print_board(int show_mines)
         }
         printf("\n");
     }
+}
+
+/* Дочитывает строку до конца; возвращает 1, если в остатке
+   были только пробелы, и 0, если там нашлось что-то ещё
+   (та же функция, что в главах 12 и 15). */
+int rest_is_empty(void)
+{
+    int empty = 1;
+    int c = getchar();
+    while (c != '\n' && c != EOF) {
+        if (c != ' ' && c != '\t') {
+            empty = 0;               /* за числами лишний символ */
+        }
+        c = getchar();
+    }
+    return empty;
 }
 
 /* Сколько клеток уже открыто. */
@@ -141,22 +157,17 @@ int main(void)
 
         printf("Ход (строка столбец): ");
         int row, col;
-        int rc = scanf("%d %d", &row, &col);
-        if (rc == EOF) {
+        int got = scanf("%9d %9d", &row, &col);
+        if (got == EOF) {            /* ввод закончился (Ctrl+D) */
             printf("\nИгра прервана.\n");
             break;
         }
-        if (rc != 2) {
+        int empty = rest_is_empty();
+        if (got != 2 || empty == 0) {
             printf("Нужно ввести два числа. Попробуй ещё раз.\n");
-            int ch;
-            while ((ch = getchar()) != '\n' && ch != EOF) {
-                /* выбрасываем мусорный ввод до конца строки */
-            }
             continue;
         }
 
-        /* Диапазон проверяем ДО вычитания единицы: из INT_MIN
-           вычесть 1 нельзя — это переполнение int. */
         if (row < 1 || row > H || col < 1 || col > W) {
             printf("Координаты вне поля: строка 1..%d, столбец 1..%d.\n",
                    H, W);

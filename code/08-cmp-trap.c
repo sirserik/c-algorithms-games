@@ -1,4 +1,4 @@
-/* Глава 8. Ловушка компаратора: почему нельзя писать «return a - b».
+/* Глава 8. Ловушка компаратора: почему нельзя писать «return x - y».
  *
  * Коротко: разность двух int сама по себе может не влезть в int.
  * Тогда знак результата получается неверным, и qsort расставляет
@@ -19,18 +19,26 @@
 /* ПЛОХОЙ компаратор: короткий, красивый и неверный. */
 int cmp_bad(const void *pa, const void *pb)
 {
-    int a = *(const int *)pa;
-    int b = *(const int *)pb;
-    return a - b;               /* разность может переполнить int */
+    const int *left = pa;
+    const int *right = pb;
+    int x = *left;
+    int y = *right;
+    return x - y;            /* разность может переполнить int */
 }
 
 /* ХОРОШИЙ компаратор: три сравнения, зато всегда правильный. */
 int cmp_good(const void *pa, const void *pb)
 {
-    int a = *(const int *)pa;
-    int b = *(const int *)pb;
-    if (a < b) return -1;
-    if (a > b) return 1;
+    const int *left = pa;    /* по этому адресу лежит int */
+    const int *right = pb;
+    int x = *left;           /* достаём сами числа */
+    int y = *right;
+    if (x < y) {
+        return -1;
+    }
+    if (x > y) {
+        return 1;
+    }
     return 0;
 }
 
@@ -58,7 +66,7 @@ int main(void)
     qsort(bad, (size_t)n, sizeof bad[0], cmp_bad);
     qsort(good, (size_t)n, sizeof good[0], cmp_good);
 
-    printf("через a - b:      ");
+    printf("через x - y:      ");
     print_array(bad, n);
     printf("через сравнения:  ");
     print_array(good, n);

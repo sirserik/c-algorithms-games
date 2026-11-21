@@ -25,7 +25,7 @@ long long grow_by_one(int n)
     long long copied = 0;
 
     for (int value = 0; value < n; value++) {
-        int *bigger = malloc((size_t)(capacity + 1) * sizeof(int));
+        int *bigger = malloc((capacity + 1) * sizeof(int));
         if (bigger == NULL) {
             free(data);
             return -1;
@@ -58,7 +58,7 @@ long long grow_doubling(int n)
             if (new_capacity == 0) {
                 new_capacity = 1;               /* самый первый рост */
             }
-            int *bigger = malloc((size_t)new_capacity * sizeof(int));
+            int *bigger = malloc(new_capacity * sizeof(int));
             if (bigger == NULL) {
                 free(data);
                 return -1;

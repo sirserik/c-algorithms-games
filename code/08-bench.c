@@ -64,17 +64,24 @@ void insertion_sort(int a[], int n)
 
 int cmp_int(const void *pa, const void *pb)
 {
-    int a = *(const int *)pa;
-    int b = *(const int *)pb;
-    if (a < b) return -1;
-    if (a > b) return 1;
+    const int *left = pa;    /* по этому адресу лежит int */
+    const int *right = pb;
+    int x = *left;           /* достаём сами числа */
+    int y = *right;
+    if (x < y) {
+        return -1;
+    }
+    if (x > y) {
+        return 1;
+    }
     return 0;
 }
 
-/* Заполняем массив одними и теми же «случайными» числами:
-   srand(1) каждый раз задаёт rand одну и ту же последовательность,
-   поэтому все сортировки получают одинаковые данные. */
-static void fill_random(int a[], int n)
+/* Заполняем массив одними и теми же «случайными» числами.
+   rand() выдаёт очередное случайное число, а srand(1) заставляет её
+   каждый раз начинать одну и ту же последовательность. Поэтому все
+   три сортировки получают одинаковые данные. Подробно — в главе 12. */
+void fill_random(int a[], int n)
 {
     srand(1);
     for (int i = 0; i < n; i++) {
@@ -82,13 +89,10 @@ static void fill_random(int a[], int n)
     }
 }
 
-/* Замеряем одну сортировку на свежезаполненном массиве. */
-static double measure(void (*sort)(int[], int), int a[], int n)
+/* Сколько секунд прошло с момента start. */
+double seconds_since(clock_t start)
 {
-    fill_random(a, n);
-    clock_t t0 = clock();
-    sort(a, n);
-    return (double)(clock() - t0) / CLOCKS_PER_SEC;
+    return (double)(clock() - start) / CLOCKS_PER_SEC;
 }
 
 int main(void)
@@ -106,10 +110,24 @@ int main(void)
     printf("       n   пузырёк   выбором  вставками\n");
     for (int s = 0; s < count; s++) {
         int n = sizes[s];
-        double b = measure(bubble_sort, a, n);
-        double e = measure(selection_sort, a, n);
-        double i = measure(insertion_sort, a, n);
-        printf("%8d %9.3f %9.3f %10.3f\n", n, b, e, i);
+
+        fill_random(a, n);
+        clock_t t0 = clock();
+        bubble_sort(a, n);
+        double bubble_sec = seconds_since(t0);
+
+        fill_random(a, n);
+        t0 = clock();
+        selection_sort(a, n);
+        double selection_sec = seconds_since(t0);
+
+        fill_random(a, n);
+        t0 = clock();
+        insertion_sort(a, n);
+        double insertion_sec = seconds_since(t0);
+
+        printf("%8d %9.3f %9.3f %10.3f\n",
+               n, bubble_sec, selection_sec, insertion_sec);
     }
 
     /* Пузырёк с флагом на уже отсортированном массиве: один проход. */
@@ -118,14 +136,13 @@ int main(void)
     clock_t t0 = clock();
     bubble_sort(a, 40000);
     printf("\nпузырёк по уже отсортированным 40000: %.6f c\n",
-           (double)(clock() - t0) / CLOCKS_PER_SEC);
+           seconds_since(t0));
 
     /* А теперь qsort на миллионе — в 25 раз больше, чем 40000. */
     fill_random(a, max_n);
     t0 = clock();
     qsort(a, (size_t)max_n, sizeof a[0], cmp_int);
-    printf("qsort по %d элементам: %.4f c\n", max_n,
-           (double)(clock() - t0) / CLOCKS_PER_SEC);
+    printf("qsort по %d элементам: %.4f c\n", max_n, seconds_since(t0));
 
     free(a);
     return 0;
