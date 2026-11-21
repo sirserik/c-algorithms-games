@@ -38,6 +38,8 @@ header-includes: |
   \definecolor{quotecol}{HTML}{4A4A4A}
   \usepackage{microtype}
   \raggedbottom
+  \sloppy
+  \exhyphenpenalty=10000
   \clubpenalty=10000
   \widowpenalty=10000
   \renewcommand\chaptermark[1]{\markboth{#1}{}}
